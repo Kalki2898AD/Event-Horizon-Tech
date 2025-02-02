@@ -25,33 +25,33 @@ async function sendWelcomeEmail(email: string, frequency: string) {
   try {
     console.log('Starting welcome email process...');
     
-    const { data: articles } = await supabase
-      .from('articles')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(3) as { data: Article[] | null };
+    // Fetch latest articles from NewsAPI
+    const response = await fetch(
+      `https://newsapi.org/v2/top-headlines?category=technology&language=en&pageSize=3&apiKey=${process.env.NEWS_API_KEY}`,
+      { cache: 'no-store' }
+    );
+    
+    const newsData = await response.json();
+    const articles = newsData.articles || [];
 
     const articlesList = articles
-      ? articles
-          .map(
-            (article) => `
-              <div style="margin-bottom: 20px;">
-                <h3 style="margin: 0;">${article.title}</h3>
-                <p style="margin: 5px 0;">${article.description}</p>
-                <a href="${article.url}" style="color: #0070f3; text-decoration: none;">Read More</a>
-              </div>
-            `
-          )
-          .join('')
-      : '';
+      .map(
+        (article: any) => `
+          <div style="margin-bottom: 20px;">
+            <h3 style="margin: 0;">${article.title}</h3>
+            <p style="margin: 5px 0;">${article.description || ''}</p>
+            <a href="${article.url}" style="color: #0070f3; text-decoration: none;">Read More</a>
+          </div>
+        `
+      )
+      .join('');
 
-    console.log('Sending to:', email);
-    console.log('Frequency:', frequency);
+    console.log('Sending welcome email to:', email);
     
     const { data, error: emailError } = await resend.emails.send({
       from: 'Event Horizon Tech <newsletter@eventhorizonlive.space>',
       to: [email],
-      subject: 'Welcome to Event Horizon Tech News! 🚀',
+      subject: 'Welcome to Event Horizon Tech! 🚀',
       replyTo: 'support@eventhorizonlive.space',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -68,7 +68,7 @@ async function sendWelcomeEmail(email: string, frequency: string) {
             <li style="margin: 10px 0;">🚀 Innovation updates</li>
           </ul>
 
-          ${articles && articles.length > 0 ? `
+          ${articles.length > 0 ? `
             <div style="margin-top: 30px;">
               <h2 style="color: #333;">Latest Articles</h2>
               ${articlesList}
@@ -97,112 +97,104 @@ async function sendWelcomeEmail(email: string, frequency: string) {
     });
 
     if (emailError) {
-      console.error('Resend API error:', emailError);
+      console.error('Welcome email error:', emailError);
       throw emailError;
     }
 
-    console.log('Welcome email sent successfully. Response:', data);
-    return data;
+    return { success: true, emailId: data?.id };
   } catch (error) {
-    console.error('Error sending welcome email:', error);
+    console.error('Failed to send welcome email:', error);
     throw error;
   }
 }
 
-export async function POST(request: Request): Promise<Response> {
+export async function POST(request: Request) {
   try {
     console.log('Processing newsletter subscription...');
-    const body = (await request.json()) as SubscribeRequest;
-    console.log('Received subscription request:', body);
+    const body: SubscribeRequest = await request.json();
+    const { email, frequency } = body;
 
-    if (!body.email) {
+    if (!email || !frequency) {
       return NextResponse.json(
-        { error: 'Email is required' },
+        { error: 'Email and frequency are required' },
         { status: 400 }
       );
     }
 
-    if (!body.frequency || !['daily', 'weekly', 'monthly'].includes(body.frequency)) {
-      return NextResponse.json(
-        { error: 'Invalid frequency' },
-        { status: 400 }
-      );
-    }
-
-    console.log('Checking for existing subscriber...');
-    const { data: existingSubscriber, error: fetchError } = await supabase
+    // Check if already subscribed
+    const { data: existingSubscriber, error: checkError } = await supabase
       .from('newsletter_subscribers')
-      .select()
-      .eq('email', body.email)
+      .select('*')
+      .eq('email', email)
       .single();
 
-    if (fetchError && fetchError.code !== 'PGRST116') {
-      console.error('Error checking existing subscriber:', fetchError);
-      throw new Error(`Failed to check subscription status: ${fetchError.message}`);
-    }
-
-    if (existingSubscriber) {
-      console.log('Updating existing subscriber...');
-      const { error: updateError } = await supabase
-        .from('newsletter_subscribers')
-        .update({ 
-          frequency: body.frequency,
-          updated_at: new Date().toISOString()
-        })
-        .eq('email', body.email);
-
-      if (updateError) {
-        console.error('Error updating subscriber:', updateError);
-        throw new Error(`Failed to update subscription: ${updateError.message}`);
-      }
-
-      console.log('Subscription updated successfully');
-      return NextResponse.json({
-        message: 'Subscription updated successfully'
-      });
-    }
-
-    console.log('Adding new subscriber...');
-    const { error: insertError } = await supabase
-      .from('newsletter_subscribers')
-      .insert([
-        {
-          email: body.email,
-          frequency: body.frequency,
-          subscribed_at: new Date().toISOString(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      ]);
-
-    if (insertError) {
-      console.error('Error inserting subscriber:', insertError);
-      throw new Error(`Failed to create subscription: ${insertError.message}`);
-    }
-
-    console.log('New subscriber added successfully');
-
-    // Send welcome email for new subscribers
-    try {
-      await sendWelcomeEmail(body.email, body.frequency);
-      console.log('Welcome email sent successfully');
-    } catch (emailError) {
-      console.error('Failed to send welcome email:', emailError);
-      // Don't fail the subscription if only the welcome email fails
-    }
-
-    return NextResponse.json({
-      message: 'Subscribed successfully'
-    });
-  } catch (error) {
-    console.error('Newsletter subscription error:', error);
-    console.error('Full subscription error:', JSON.stringify(error, null, 2));
-    if (error instanceof PostgrestError) {
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('Error checking existing subscriber:', checkError);
       return NextResponse.json(
-        { error: error.message },
+        { error: 'Failed to process subscription' },
         { status: 500 }
       );
     }
+
+    if (existingSubscriber) {
+      // Update frequency if different
+      if (existingSubscriber.frequency !== frequency) {
+        const { error: updateError } = await supabase
+          .from('newsletter_subscribers')
+          .update({ frequency })
+          .eq('email', email);
+
+        if (updateError) {
+          console.error('Error updating frequency:', updateError);
+          return NextResponse.json(
+            { error: 'Failed to update subscription frequency' },
+            { status: 500 }
+          );
+        }
+      }
+
+      return NextResponse.json({
+        message: 'Subscription frequency updated successfully',
+        subscriber: existingSubscriber,
+      });
+    }
+
+    // Add new subscriber
+    const { data: newSubscriber, error: insertError } = await supabase
+      .from('newsletter_subscribers')
+      .insert([
+        {
+          email,
+          frequency,
+          subscribed_at: new Date().toISOString(),
+        },
+      ])
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error('Error inserting new subscriber:', insertError);
+      return NextResponse.json(
+        { error: 'Failed to create subscription' },
+        { status: 500 }
+      );
+    }
+
+    // Send welcome email immediately after successful subscription
+    try {
+      await sendWelcomeEmail(email, frequency);
+    } catch (emailError) {
+      console.error('Failed to send welcome email:', emailError);
+      // Continue with success response even if email fails
+      // The subscription was successful, we just couldn't send the welcome email
+    }
+
+    return NextResponse.json({
+      message: 'Successfully subscribed to newsletter',
+      subscriber: newSubscriber,
+    });
+  } catch (error) {
+    console.error('Newsletter subscription error:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to subscribe to newsletter. Please try again later.' },
       { status: 500 }
