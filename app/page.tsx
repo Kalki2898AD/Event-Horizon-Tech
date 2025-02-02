@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import NewsCard from './components/NewsCard';
 import NewsletterDialog from './components/NewsletterDialog';
+import AdContainer from './components/AdContainer'; // Import AdContainer
 import { Article } from './types';
 
 function AdPlaceholder() {
@@ -48,15 +49,6 @@ export default function Home() {
     }
   }, [mounted]);
 
-  // Insert ad after every 6 articles
-  const articlesWithAds = articles.reduce<(Article | 'ad')[]>((acc, article, index) => {
-    acc.push(article);
-    if ((index + 1) % 6 === 0) {
-      acc.push('ad');
-    }
-    return acc;
-  }, []);
-
   if (!mounted) {
     return (
       <div className="min-h-screen bg-gray-50 pt-24 pb-10">
@@ -98,33 +90,47 @@ export default function Home() {
           </div>
         )}
 
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[...Array(6)].map((_, index) => (
-              <div key={index} className="animate-pulse">
-                <div className="bg-gray-200 h-48 rounded-lg mb-4"></div>
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-              </div>
+        <div className="container mx-auto px-4 py-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-8">Latest Tech News</h1>
+          
+          {/* Top ad */}
+          <AdContainer 
+            slot="1234567890"
+            format="auto"
+            className="mb-8"
+          />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {articles.map((article, index) => (
+              <>
+                <NewsCard key={article.url} article={article} />
+                {/* Insert ad after every 6th article */}
+                {(index + 1) % 6 === 0 && (
+                  <div className="col-span-full">
+                    <AdContainer 
+                      slot="9876543210"
+                      format="fluid"
+                      layout="in-article"
+                    />
+                  </div>
+                )}
+              </>
             ))}
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {articlesWithAds.map((item, index) =>
-              item === 'ad' ? (
-                <AdPlaceholder key={`ad-${index}`} />
-              ) : (
-                <NewsCard key={item.url} article={item} />
-              )
-            )}
-          </div>
-        )}
-      </div>
 
-      <NewsletterDialog
-        isOpen={isNewsletterOpen}
-        setIsOpen={setIsNewsletterOpen}
-      />
+          {/* Bottom ad */}
+          <AdContainer 
+            slot="5432109876"
+            format="auto"
+            className="mt-8"
+          />
+        </div>
+
+        <NewsletterDialog
+          isOpen={isNewsletterOpen}
+          setIsOpen={setIsNewsletterOpen}
+        />
+      </div>
     </div>
   );
 }

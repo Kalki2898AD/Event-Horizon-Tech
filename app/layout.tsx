@@ -3,13 +3,13 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import Navbar from './components/Navbar';
 import AuthProvider from './providers/AuthProvider';
-import { Suspense } from 'react';
+import Script from 'next/script';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Event Horizon Tech',
-  description: 'Stay updated with the latest technology news and developments',
+  description: 'Your daily source for the latest technology news and updates',
 };
 
 export default function RootLayout({
@@ -18,17 +18,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={inter.className} suppressHydrationWarning>
+    <html lang="en">
+      <head>
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9131964371118756"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
+      </head>
+      <body className={inter.className} suppressHydrationWarning={true}>
         <AuthProvider>
-          <Suspense fallback={<div className="h-16 bg-white shadow-md" />}>
-            <Navbar />
-          </Suspense>
-          <main>
-            <Suspense fallback={<div className="min-h-screen animate-pulse bg-gray-50" />}>
-              {children}
-            </Suspense>
-          </main>
+          <Navbar />
+          {children}
         </AuthProvider>
       </body>
     </html>

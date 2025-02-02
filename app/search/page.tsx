@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import NewsCard from '../components/NewsCard';
+import AdContainer from '../components/AdContainer'; // Import AdContainer
 import { Article } from '../types';
 
 export default function SearchPage() {
@@ -106,13 +107,40 @@ export default function SearchPage() {
             ))}
           </div>
         ) : articles.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {articles.map((article) => (
-              <NewsCard 
-                key={article.url} 
-                article={article} 
-              />
-            ))}
+          <div className="container mx-auto px-4 py-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">Search Results</h1>
+            
+            {/* Top ad */}
+            <AdContainer 
+              slot="3456789012"
+              format="auto"
+              className="mb-8"
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {articles.map((article, index) => (
+                <>
+                  <NewsCard key={article.url} article={article} />
+                  {/* Insert ad after every 6th article */}
+                  {(index + 1) % 6 === 0 && (
+                    <div className="col-span-full">
+                      <AdContainer 
+                        slot="7890123456"
+                        format="fluid"
+                        layout="in-article"
+                      />
+                    </div>
+                  )}
+                </>
+              ))}
+            </div>
+
+            {/* Bottom ad */}
+            <AdContainer 
+              slot="2345678901"
+              format="auto"
+              className="mt-8"
+            />
           </div>
         ) : !loading && query?.trim() ? (
           <div className="text-center py-12">
