@@ -3,6 +3,7 @@ import axios from 'axios';
 import { supabaseAdmin } from '@/app/lib/supabaseAdmin';
 import { JSDOM } from 'jsdom';
 import { Readability } from '@mozilla/readability';
+import { ReadabilityArticle } from '@/app/types';
 
 export async function GET(request: Request) {
   try {
@@ -35,7 +36,7 @@ export async function GET(request: Request) {
     });
     const dom = new JSDOM(response.data, { url: articleUrl });
     const reader = new Readability(dom.window.document);
-    const article = reader.parse();
+    const article = reader.parse() as ReadabilityArticle | null;
 
     if (!article) {
       return NextResponse.json(
@@ -48,14 +49,14 @@ export async function GET(request: Request) {
     const newArticle = {
       id: articleUrl,
       url: articleUrl,
-      title: article?.title || dom.window.document.title,
-      content: article?.content || '',
-      textContent: article?.textContent || '',
-      excerpt: article?.excerpt || '',
-      byline: article?.byline || '',
-      dir: article?.dir || 'ltr',
-      length: article?.length || 0,
-      siteName: article?.siteName || '',
+      title: article.title,
+      content: article.content,
+      textContent: article.textContent,
+      excerpt: article.excerpt,
+      byline: article.byline,
+      dir: article.dir,
+      length: article.length,
+      siteName: article.siteName,
     };
 
     const { error: insertError } = await supabaseAdmin
