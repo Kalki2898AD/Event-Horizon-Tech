@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import axios from 'axios';
-import { supabase } from '@/app/lib/supabase';
+import { supabaseAdmin } from '@/app/lib/supabaseAdmin';
 import { JSDOM } from 'jsdom';
 import { Readability } from '@mozilla/readability';
 
@@ -17,7 +17,7 @@ export async function GET(request: Request) {
     }
 
     // Try to get the article from Supabase cache first
-    const { data: cachedArticle } = await supabase
+    const { data: cachedArticle } = await supabaseAdmin
       .from('articles')
       .select('*')
       .eq('url', articleUrl)
@@ -49,28 +49,24 @@ export async function GET(request: Request) {
       id: articleUrl,
       url: articleUrl,
       title: article?.title || dom.window.document.title,
-      description: article?.excerpt || '',
-      urlToImage: dom.window.document.querySelector('meta[property="og:image"]')?.getAttribute('content') || '',
-      content: article?.textContent || '',
-      fullContent: article?.content || '',
-      source: { name: new URL(articleUrl).hostname },
-      publishedAt: new Date().toISOString(),
+      content: article?.content || '',
+      textContent: article?.textContent || '',
+      excerpt: article?.excerpt || '',
+      byline: article?.byline || '',
+      dir: article?.dir || 'ltr',
+      length: article?.length || 0,
+      siteName: article?.siteName || '',
     };
 
-    const { data: savedArticle, error: saveError } = await supabase
+    const { error: insertError } = await supabaseAdmin
       .from('articles')
-      .upsert([newArticle])
-      .select()
-      .single();
+      .insert(newArticle);
 
-    if (saveError) {
-      console.error('Error saving article:', saveError);
-      // Continue without caching
+    if (insertError) {
+      console.error('Error caching article:', insertError);
     }
 
-    return NextResponse.json({
-      article: savedArticle || newArticle,
-    });
+    return NextResponse.json({ article: newArticle });
   } catch (error) {
     console.error('Error processing article:', error);
     return NextResponse.json(
