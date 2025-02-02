@@ -66,7 +66,7 @@ function SearchContent() {
             <div className="h-8 bg-gray-200 rounded w-1/3 mb-8"></div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {[...Array(6)].map((_, index) => (
-                <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden">
+                <div key={`skeleton-${index}`} className="bg-white rounded-lg shadow-md overflow-hidden">
                   <div className="h-48 bg-gray-200"></div>
                   <div className="p-4">
                     <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
@@ -99,7 +99,7 @@ function SearchContent() {
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[...Array(6)].map((_, index) => (
-              <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden animate-pulse">
+              <div key={`skeleton-${index}`} className="bg-white rounded-lg shadow-md overflow-hidden animate-pulse">
                 <div className="h-48 bg-gray-200"></div>
                 <div className="p-4">
                   <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
@@ -122,21 +122,24 @@ function SearchContent() {
                 />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {articles.map((article, index) => (
-                    <>
-                      <NewsCard key={article.url} article={article} />
-                      {/* Insert ad after every 6th article */}
-                      {(index + 1) % 6 === 0 && (
-                        <div className="col-span-full">
-                          <AdContainer 
-                            slot="7890123456"
-                            format="fluid"
-                            layout="in-article"
-                          />
-                        </div>
-                      )}
-                    </>
-                  ))}
+                  {articles.map((article, index) => {
+                    const key = article.url || `search-result-${index}`;
+                    return (
+                      <div key={key}>
+                        <NewsCard article={article} />
+                        {/* Insert ad after every 6th article */}
+                        {(index + 1) % 6 === 0 && (
+                          <div className="col-span-full">
+                            <AdContainer 
+                              slot="7890123456"
+                              format="fluid"
+                              layout="in-article"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
 
                 {/* Bottom ad */}
@@ -173,7 +176,7 @@ export default function SearchPage() {
               <div className="h-8 bg-gray-200 rounded w-1/3 mb-8"></div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {[...Array(6)].map((_, index) => (
-                  <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden">
+                  <div key={`skeleton-${index}`} className="bg-white rounded-lg shadow-md overflow-hidden">
                     <div className="h-48 bg-gray-200"></div>
                     <div className="p-4">
                       <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>

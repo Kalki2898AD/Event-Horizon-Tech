@@ -1,14 +1,19 @@
 export interface Article {
   id?: string;
-  title: string;
-  description: string;
   url: string;
-  urlToImage?: string;
+  title: string;
+  description?: string;
+  content: string;
+  author?: string;
   publishedAt: string;
   source: {
+    id?: string;
     name: string;
   };
-  content: string;
+  urlToImage?: string;
+  byline?: string;
+  siteName?: string;
+  created_at?: string;
   user_email?: string;
 }
 
@@ -30,11 +35,12 @@ export interface ReadabilityArticle {
   excerpt: string;
   byline: string;
   dir: string;
-  siteName: string;
+  siteName?: string;
+  urlToImage?: string;
 }
 
 export interface NewsAPIResponse {
   status: string;
-  totalResults: number;
+  totalResults?: number;
   articles: Article[];
 }

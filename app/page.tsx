@@ -4,7 +4,18 @@ import { useEffect, useState } from 'react';
 import NewsCard from './components/NewsCard';
 import NewsletterDialog from './components/NewsletterDialog';
 import AdContainer from './components/AdContainer'; 
-import { Article } from './types';
+import { Article } from '@/app/types';
+
+const AdSection = ({ children }: { children: React.ReactNode }) => (
+  <div className="w-full bg-white shadow-sm mb-8">
+    <div className="p-2 border-b border-gray-100">
+      <p className="text-xs text-gray-500 text-center">Advertisement</p>
+    </div>
+    <div className="flex justify-center">
+      {children}
+    </div>
+  </div>
+);
 
 export default function Home() {
   const [articles, setArticles] = useState<Article[]>([]);
@@ -95,43 +106,42 @@ export default function Home() {
           </button>
         </div>
 
-        <div className="container mx-auto">
-          {/* Top ad */}
-          <AdContainer 
-            slot="1234567890"
-            format="auto"
-            className="mb-8"
-          />
+        {/* Top ad - full width */}
+        <AdSection>
+          <AdContainer slot="1234567890" format="auto" />
+        </AdSection>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {articles.map((article, index) => (
-              <div key={article.url}>
-                <NewsCard article={article} />
-                {/* Insert ad after every 6th article */}
+        {/* News grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {articles.map((article, index) => {
+            const key = article.url || `article-${index}`;
+            return (
+              <div key={key} className="contents">
+                <div>
+                  <NewsCard article={article} />
+                </div>
+                
+                {/* Insert full-width ad after every 6th article */}
                 {(index + 1) % 6 === 0 && (
-                  <div className="col-span-full mt-6">
-                    <AdContainer 
-                      slot="9876543210"
-                      format="fluid"
-                      layout="in-article"
-                    />
+                  <div className="col-span-full w-full">
+                    <AdSection>
+                      <AdContainer slot="9876543210" format="auto" />
+                    </AdSection>
                   </div>
                 )}
               </div>
-            ))}
-          </div>
-
-          {/* Bottom ad */}
-          <AdContainer 
-            slot="5432109876"
-            format="auto"
-            className="mt-8"
-          />
+            );
+          })}
         </div>
+
+        {/* Bottom ad - full width */}
+        <AdSection>
+          <AdContainer slot="5432109876" format="auto" />
+        </AdSection>
 
         <NewsletterDialog
           isOpen={isNewsletterOpen}
-          onClose={() => setIsNewsletterOpen(false)}
+          setIsOpen={setIsNewsletterOpen}
         />
       </div>
     </div>

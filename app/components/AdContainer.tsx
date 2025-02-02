@@ -1,54 +1,81 @@
 'use client';
 
-import { useEffect } from 'react';
-import Script from 'next/script';
+import { useEffect, useRef } from 'react';
 
 interface AdContainerProps {
   slot: string;
-  format?: 'auto' | 'horizontal' | 'vertical' | 'rectangle' | 'fluid';
-  layout?: 'display' | 'in-article';
+  format?: 'auto' | 'fluid';
+  layout?: 'in-article';
   className?: string;
 }
 
-// Type definition for Google AdSense
+interface AdsByGoogle {
+  push: (params: Record<string, unknown>) => void;
+}
+
 declare global {
   interface Window {
-    adsbygoogle: unknown[];
+    adsbygoogle: AdsByGoogle[];
   }
 }
 
-const AdContainer = ({ slot, format = 'auto', layout = 'display', className = '' }: AdContainerProps) => {
+const AdContainer = ({ slot, format = 'auto', layout, className = '' }: AdContainerProps) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     try {
-      if (!window.adsbygoogle) {
-        window.adsbygoogle = [];
-      }
-      window.adsbygoogle.push({});
-    } catch (err) {
-      console.error('AdSense error:', err);
+      const adScript = document.createElement('script');
+      adScript.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9131964371118756';
+      adScript.crossOrigin = 'anonymous';
+      adScript.async = true;
+      document.head.appendChild(adScript);
+
+      const pushAd = () => {
+        try {
+          if (!window.adsbygoogle) {
+            window.adsbygoogle = [];
+          }
+          window.adsbygoogle.push({
+            push: () => {}
+          });
+        } catch (error) {
+          console.error('Error pushing ad:', error);
+        }
+      };
+
+      adScript.onload = pushAd;
+
+      return () => {
+        try {
+          document.head.removeChild(adScript);
+        } catch (error) {
+          console.error('Error cleaning up ad script:', error);
+        }
+      };
+    } catch (error) {
+      console.error('Error setting up ad:', error);
     }
   }, []);
 
   return (
-    <>
-      <Script
-        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"
-        strategy="lazyOnload"
-        crossOrigin="anonymous"
+    <div 
+      ref={containerRef}
+      className={`w-full flex justify-center items-center ${className}`}
+      style={{
+        minHeight: '250px',
+        backgroundColor: '#ffffff'
+      }}
+    >
+      <div
+        className="adsbygoogle w-full h-[250px]"
+        style={{ display: 'block' }}
         data-ad-client="ca-pub-9131964371118756"
+        data-ad-slot={slot}
+        data-ad-format={format}
+        {...(layout && { 'data-ad-layout': layout })}
+        data-full-width-responsive="true"
       />
-      <div className={`ad-container my-4 text-center ${className}`}>
-        <ins
-          className="adsbygoogle"
-          style={{ display: 'block' }}
-          data-ad-client="ca-pub-9131964371118756"
-          data-ad-slot={slot}
-          data-ad-format={format}
-          data-ad-layout={layout}
-          data-full-width-responsive="true"
-        />
-      </div>
-    </>
+    </div>
   );
 };
 

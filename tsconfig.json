@@ -19,8 +19,10 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["*"],
+      "@/app/*": ["app/*"]
     },
+    "baseUrl": ".",
     "typeRoots": [
       "./node_modules/@types",
       "./app/types"

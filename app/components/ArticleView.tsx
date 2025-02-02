@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import Image from 'next/image';
 import AdContainer from './AdContainer';
 import { supabase } from '@/app/lib/supabase';
 
@@ -15,6 +16,7 @@ interface ArticleContent {
   content: string;
   byline?: string;
   siteName?: string;
+  urlToImage?: string;
 }
 
 export default function ArticleView({ url, onError }: ArticleViewProps) {
@@ -100,11 +102,12 @@ export default function ArticleView({ url, onError }: ArticleViewProps) {
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="animate-pulse">
+        <div className="animate-pulse max-w-4xl mx-auto">
           <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+          <div className="h-64 bg-gray-200 rounded w-full mb-4"></div>
           <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
-          <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+          <div className="h-4 bg-gray-200 rounded w-5/6 mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-full"></div>
         </div>
       </div>
     );
@@ -140,18 +143,35 @@ export default function ArticleView({ url, onError }: ArticleViewProps) {
           )}
         </div>
 
-        {/* First ad */}
-        <div className="my-4">
-          <AdContainer
-            slot="5891354408"
-            format="fluid"
-            layout="in-article"
-            className="mb-4"
-          />
+        {/* Featured Image */}
+        {article.urlToImage && (
+          <div className="relative w-full aspect-video mb-8 rounded-lg overflow-hidden">
+            <Image
+              src={article.urlToImage}
+              alt={article.title}
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
+              priority
+              className="object-cover"
+            />
+          </div>
+        )}
+
+        {/* Top ad */}
+        <div className="my-8 bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="p-4">
+            <h3 className="text-sm font-medium text-gray-500 mb-2">Advertisement</h3>
+            <AdContainer 
+              slot="5891354408"
+              format="fluid"
+              layout="in-article"
+            />
+          </div>
         </div>
 
+        {/* Article content */}
         <div
-          className="mt-8"
+          className="mt-8 article-content"
           dangerouslySetInnerHTML={{ __html: article.content }}
         />
 
@@ -162,24 +182,28 @@ export default function ArticleView({ url, onError }: ArticleViewProps) {
         )}
 
         {article.siteName && (
-          <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 hover:text-blue-800"
-          >
-            Read on {article.siteName}
-          </a>
+          <div className="mt-4">
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:text-blue-800"
+            >
+              Read on {article.siteName}
+            </a>
+          </div>
         )}
 
-        {/* Second ad */}
-        <div className="my-4">
-          <AdContainer
-            slot="5891354408"
-            format="fluid"
-            layout="in-article"
-            className="mb-4"
-          />
+        {/* Bottom ad */}
+        <div className="my-8 bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="p-4">
+            <h3 className="text-sm font-medium text-gray-500 mb-2">Advertisement</h3>
+            <AdContainer 
+              slot="5891354408"
+              format="fluid"
+              layout="in-article"
+            />
+          </div>
         </div>
       </article>
     </div>

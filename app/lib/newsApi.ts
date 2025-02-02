@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Article, NewsAPIResponse } from './types';
+import type { Article, NewsAPIResponse } from '@/app/types';
 
 const NEWS_API_KEY = process.env.NEWS_API_KEY;
 const BASE_URL = 'https://newsapi.org/v2';
