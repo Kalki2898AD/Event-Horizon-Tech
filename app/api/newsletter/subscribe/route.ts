@@ -52,7 +52,7 @@ async function sendWelcomeEmail(email: string, frequency: string) {
       from: 'Event Horizon Tech <newsletter@eventhorizonlive.space>',
       to: [email],
       subject: 'Welcome to Event Horizon Tech! 🚀',
-      replyTo: 'support@eventhorizonlive.space',
+      replyTo: 'rishikeshvarma9854@gmail.com',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #333; text-align: center;">Welcome to Event Horizon Tech! 🚀</h1>
