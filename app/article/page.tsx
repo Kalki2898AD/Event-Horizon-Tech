@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import ArticleView from '../components/ArticleView';
 import Link from 'next/link';
 
-export default function ArticlePage() {
+function ArticleContent() {
   const searchParams = useSearchParams();
   const url = searchParams.get('url');
   const [error, setError] = useState<string | null>(null);
@@ -55,5 +55,24 @@ export default function ArticlePage() {
     <div className="min-h-screen bg-gray-50 pt-20 pb-10">
       <ArticleView url={url} onError={setError} />
     </div>
+  );
+}
+
+export default function ArticlePage() {
+  return (
+    <Suspense 
+      fallback={
+        <div className="min-h-screen bg-gray-50 pt-20 pb-10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+              <p className="mt-4 text-gray-600">Loading article...</p>
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <ArticleContent />
+    </Suspense>
   );
 }
