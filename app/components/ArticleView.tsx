@@ -137,11 +137,14 @@ export default function ArticleView({ url, onError }: ArticleViewProps) {
           )}
         </div>
 
-        <AdContainer 
-          slot="5678901234"
-          format="fluid"
-          layout="in-article"
-        />
+        <div className="my-4">
+          <AdContainer
+            slot="5891354408"
+            format="fluid"
+            layout="in-article"
+            className="mb-4"
+          />
+        </div>
 
         <div
           className="mt-8"
@@ -159,11 +162,14 @@ export default function ArticleView({ url, onError }: ArticleViewProps) {
           </a>
         </div>
 
-        <AdContainer 
-          slot="4321098765"
-          format="fluid"
-          layout="in-article"
-        />
+        <div className="my-4">
+          <AdContainer
+            slot="5891354408"
+            format="fluid"
+            layout="in-article"
+            className="mb-4"
+          />
+        </div>
       </article>
     </div>
   );
