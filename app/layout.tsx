@@ -2,14 +2,13 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import Navbar from './components/Navbar';
-import AuthProvider from './providers/AuthProvider';
 import Script from 'next/script';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Event Horizon Tech',
-  description: 'Your daily source for the latest technology news and updates',
+  description: 'Latest Technology News and Updates',
 };
 
 export default function RootLayout({
@@ -27,11 +26,9 @@ export default function RootLayout({
           strategy="afterInteractive"
         />
       </head>
-      <body className={inter.className} suppressHydrationWarning={true}>
-        <AuthProvider>
-          <Navbar />
-          {children}
-        </AuthProvider>
+      <body className={inter.className}>
+        <Navbar />
+        {children}
       </body>
     </html>
   );

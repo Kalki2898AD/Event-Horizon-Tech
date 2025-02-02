@@ -9,13 +9,14 @@ interface AdContainerProps {
   className?: string;
 }
 
-interface AdsByGoogle {
-  push: (params: Record<string, unknown>) => void;
+interface AdSenseConfig {
+  google_ad_client: string;
+  enable_page_level_ads: boolean;
 }
 
 declare global {
   interface Window {
-    adsbygoogle: AdsByGoogle[];
+    adsbygoogle: Array<AdSenseConfig | { push: (params: AdSenseConfig) => void }>;
   }
 }
 
@@ -24,36 +25,17 @@ const AdContainer = ({ slot, format = 'auto', layout, className = '' }: AdContai
 
   useEffect(() => {
     try {
-      const adScript = document.createElement('script');
-      adScript.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9131964371118756';
-      adScript.crossOrigin = 'anonymous';
-      adScript.async = true;
-      document.head.appendChild(adScript);
-
-      const pushAd = () => {
-        try {
-          if (!window.adsbygoogle) {
-            window.adsbygoogle = [];
-          }
-          window.adsbygoogle.push({
-            push: () => {}
-          });
-        } catch (error) {
-          console.error('Error pushing ad:', error);
+      if (typeof window !== 'undefined') {
+        if (!window.adsbygoogle) {
+          window.adsbygoogle = [];
         }
-      };
-
-      adScript.onload = pushAd;
-
-      return () => {
-        try {
-          document.head.removeChild(adScript);
-        } catch (error) {
-          console.error('Error cleaning up ad script:', error);
-        }
-      };
+        window.adsbygoogle.push({
+          google_ad_client: 'ca-pub-9131964371118756',
+          enable_page_level_ads: true
+        });
+      }
     } catch (error) {
-      console.error('Error setting up ad:', error);
+      console.error('Error initializing ad:', error);
     }
   }, []);
 
@@ -66,7 +48,7 @@ const AdContainer = ({ slot, format = 'auto', layout, className = '' }: AdContai
         backgroundColor: '#ffffff'
       }}
     >
-      <div
+      <ins
         className="adsbygoogle w-full h-[250px]"
         style={{ display: 'block' }}
         data-ad-client="ca-pub-9131964371118756"
