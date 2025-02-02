@@ -3,21 +3,8 @@
 import { useEffect, useState } from 'react';
 import NewsCard from './components/NewsCard';
 import NewsletterDialog from './components/NewsletterDialog';
-import AdContainer from './components/AdContainer'; // Import AdContainer
+import AdContainer from './components/AdContainer'; 
 import { Article } from './types';
-
-function AdPlaceholder() {
-  return (
-    <div className="col-span-1 md:col-span-2 lg:col-span-3 bg-white rounded-lg shadow-md p-6 my-4">
-      <div className="text-center text-gray-500">
-        <p className="text-sm">Advertisement</p>
-        <div className="mt-2 bg-gray-100 h-32 flex items-center justify-center">
-          <p>Ad Space</p>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function Home() {
   const [articles, setArticles] = useState<Article[]>([]);

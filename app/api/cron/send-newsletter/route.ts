@@ -1,4 +1,4 @@
-import { NextResponse, NextRequest } from 'next/server';
+import { NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 
@@ -6,6 +6,17 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 const resend = new Resend(process.env.RESEND_API_KEY);
+
+interface NewsArticle {
+  title: string;
+  description: string;
+  url: string;
+  urlToImage: string;
+  publishedAt: string;
+  source: {
+    name: string;
+  };
+}
 
 async function getSubscribersByFrequency(frequency: string) {
   const { data: subscribers, error } = await supabase
@@ -20,30 +31,30 @@ async function getSubscribersByFrequency(frequency: string) {
   return subscribers || [];
 }
 
-async function fetchLatestNews() {
-  const response = await fetch(`${process.env.NEXTAUTH_URL}/api/news`);
+async function fetchLatestNews(): Promise<NewsArticle[]> {
+  const response = await fetch(
+    `https://newsapi.org/v2/top-headlines?category=technology&language=en&pageSize=5&apiKey=${process.env.NEWS_API_KEY}`,
+    { cache: 'no-store' }
+  );
+  
   if (!response.ok) {
     throw new Error('Failed to fetch news');
   }
-  const { articles } = await response.json();
-  return articles;
+
+  const data = await response.json();
+  return data.articles;
 }
 
-async function sendNewsletterToSubscriber(email: string, frequency: string, articles: any[]) {
+async function sendNewsletterToSubscriber(email: string, frequency: string, articles: NewsArticle[]) {
   const articlesList = articles
     .map(
       (article) => `
-      <div style="margin-bottom: 20px;">
-        <h2 style="margin: 0; font-size: 18px;">
-          <a href="${article.url}" style="color: #4F46E5; text-decoration: none;">
-            ${article.title}
-          </a>
-        </h2>
-        <p style="margin: 8px 0 0; color: #4B5563;">
-          ${article.description || 'No description available'}
-        </p>
-      </div>
-    `
+        <div style="margin-bottom: 20px;">
+          <h3 style="margin: 0;">${article.title}</h3>
+          <p style="margin: 5px 0;">${article.description}</p>
+          <a href="${article.url}" style="color: #0070f3; text-decoration: none;">Read More</a>
+        </div>
+      `
     )
     .join('');
 
@@ -51,38 +62,18 @@ async function sendNewsletterToSubscriber(email: string, frequency: string, arti
     from: 'Event Horizon Tech <newsletter@eventhorizonlive.space>',
     to: [email],
     subject: `Your ${frequency} Tech News Digest`,
-    reply_to: 'support@eventhorizonlive.space',
+    replyTo: 'support@eventhorizonlive.space',
     html: `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <title>Your ${frequency} Tech News Digest</title>
-        </head>
-        <body style="font-family: system-ui, -apple-system, sans-serif; line-height: 1.5; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <header style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #4F46E5; margin: 0;">Event Horizon Tech</h1>
-            <p style="color: #6B7280; margin: 10px 0 0;">Your ${frequency} tech news digest</p>
-          </header>
-
-          <main>
-            <div style="background: white; border-radius: 8px; padding: 24px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
-              <h2 style="margin: 0 0 20px; color: #111827;">Latest Tech News</h2>
-              ${articlesList}
-            </div>
-          </main>
-
-          <footer style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #E5E7EB;">
-            <p style="color: #6B7280; margin: 0;">
-              You're receiving this email because you subscribed to ${frequency} updates from Event Horizon Tech.
-            </p>
-            <p style="color: #6B7280; margin: 10px 0 0;">
-              <a href="{unsubscribe_url}" style="color: #4F46E5; text-decoration: none;">Unsubscribe</a>
-            </p>
-          </footer>
-        </body>
-      </html>
-    `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h1 style="color: #333; text-align: center;">Your ${frequency} Tech News Digest</h1>
+        <p>Here are the latest tech news stories for you:</p>
+        ${articlesList}
+        <div style="margin-top: 30px; text-align: center;">
+          <p>Stay tuned for more tech news and updates!</p>
+          <a href="https://eventhorizonlive.space" style="display: inline-block; padding: 10px 20px; background-color: #0070f3; color: white; text-decoration: none; border-radius: 5px;">Visit Our Website</a>
+        </div>
+      </div>
+    `,
   });
 
   if (error) {
@@ -93,70 +84,52 @@ async function sendNewsletterToSubscriber(email: string, frequency: string, arti
 }
 
 export async function GET(request: NextRequest): Promise<Response> {
+  const searchParams = request.nextUrl.searchParams;
+  const secret = searchParams.get('secret');
+
+  if (secret !== process.env.CRON_SECRET) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
   try {
-    // Verify cron secret
-    const searchParams = request.nextUrl.searchParams;
-    const secret = searchParams.get('secret');
-
-    if (secret !== process.env.CRON_SECRET) {
-      return new Response('Unauthorized', { status: 401 });
-    }
-
     console.log('Starting newsletter distribution...');
-    const currentDate = new Date();
-    const currentDay = currentDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
-    const currentDayOfMonth = currentDate.getDate();
-
-    // Determine which frequencies to send based on current date
-    const frequenciesToSend = ['daily'];
-    
-    // Send weekly newsletters on Monday
-    if (currentDay === 1) {
-      frequenciesToSend.push('weekly');
-    }
-    
-    // Send monthly newsletters on the 1st of the month
-    if (currentDayOfMonth === 1) {
-      frequenciesToSend.push('monthly');
-    }
-
-    console.log('Fetching latest news...');
-    const articles = await fetchLatestNews();
-
-    if (!articles || articles.length === 0) {
-      throw new Error('No articles available for newsletter');
-    }
-
     const results = [];
 
-    for (const frequency of frequenciesToSend) {
-      console.log(`Processing ${frequency} newsletters...`);
-      const subscribers = await getSubscribersByFrequency(frequency);
-      console.log(`Found ${subscribers.length} ${frequency} subscribers`);
+    // Daily newsletters
+    const dailySubscribers = await getSubscribersByFrequency('daily');
+    console.log(`Found ${dailySubscribers.length} daily subscribers`);
 
-      for (const subscriber of subscribers) {
-        try {
-          console.log(`Sending ${frequency} newsletter to ${subscriber.email}...`);
-          const result = await sendNewsletterToSubscriber(
-            subscriber.email,
-            frequency,
-            articles.slice(0, 5)
-          );
+    const articles = await fetchLatestNews();
+    console.log(`Fetched ${articles.length} articles`);
+
+    for (const subscriber of dailySubscribers) {
+      try {
+        const result = await sendNewsletterToSubscriber(
+          subscriber.email,
+          'daily',
+          articles
+        );
+        if (result) {
           results.push({
             email: subscriber.email,
-            frequency,
             status: 'success',
             id: result.id
           });
-        } catch (error) {
-          console.error(`Failed to send to ${subscriber.email}:`, error);
-          results.push({
-            email: subscriber.email,
-            frequency,
-            status: 'error',
-            error: error instanceof Error ? error.message : 'Unknown error'
-          });
         }
+        
+        // Update last_sent_at
+        await supabase
+          .from('newsletter_subscribers')
+          .update({ last_sent_at: new Date().toISOString() })
+          .eq('email', subscriber.email);
+
+      } catch (error) {
+        console.error(`Failed to send to ${subscriber.email}:`, error);
+        results.push({
+          email: subscriber.email,
+          status: 'failed',
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
       }
     }
 
