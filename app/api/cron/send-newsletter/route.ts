@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 
@@ -83,15 +83,18 @@ async function sendNewsletterToSubscriber(email: string, frequency: string, arti
   return data;
 }
 
-export async function GET(request: NextRequest): Promise<Response> {
-  const searchParams = request.nextUrl.searchParams;
-  const secret = searchParams.get('secret');
-
-  if (secret !== process.env.CRON_SECRET) {
-    return new Response('Unauthorized', { status: 401 });
-  }
-
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
+    const url = new URL(request.url);
+    const secret = url.searchParams.get('secret');
+
+    if (secret !== process.env.CRON_SECRET) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     console.log('Starting newsletter distribution...');
     const results = [];
 
@@ -133,10 +136,10 @@ export async function GET(request: NextRequest): Promise<Response> {
       }
     }
 
-    return new Response(JSON.stringify({
+    return NextResponse.json({
       message: 'Newsletter distribution completed',
       results
-    }), {
+    }, {
       status: 200,
       headers: {
         'Content-Type': 'application/json'
@@ -144,6 +147,9 @@ export async function GET(request: NextRequest): Promise<Response> {
     });
   } catch (error) {
     console.error('Newsletter distribution error:', error);
-    return new Response('Failed to distribute newsletters', { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to distribute newsletters' },
+      { status: 500 }
+    );
   }
 }

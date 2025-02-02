@@ -26,23 +26,26 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const searchParams = request.nextUrl.searchParams;
-  const query = searchParams.get('q');
-
-  if (!query) {
-    return NextResponse.json(
-      { error: 'Query parameter is required' },
-      { status: 400 }
-    );
-  }
-
   try {
+    const url = new URL(request.url);
+    const query = url.searchParams.get('q');
+    const page = url.searchParams.get('page') || '1';
+    const pageSize = url.searchParams.get('pageSize') || '20';
+
+    if (!query) {
+      return NextResponse.json(
+        { error: 'Query parameter is required' },
+        { status: 400 }
+      );
+    }
+
     const response = await axios.get(`${BASE_URL}/everything`, {
       params: {
         q: query,
+        page,
+        pageSize,
         language: 'en',
         sortBy: 'publishedAt',
-        pageSize: 20,
         apiKey: NEWS_API_KEY,
       },
       timeout: 5000, // 5 second timeout
