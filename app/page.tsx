@@ -8,25 +8,40 @@ import { Article } from './types';
 
 export default function Home() {
   const [articles, setArticles] = useState<Article[]>([]);
-  const [mounted, setMounted] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isNewsletterOpen, setIsNewsletterOpen] = useState(false);
 
   useEffect(() => {
     const fetchArticles = async () => {
       try {
+        setLoading(true);
+        setError(null);
         const response = await fetch('/api/news');
+        if (!response.ok) {
+          throw new Error('Failed to fetch articles');
+        }
         const data = await response.json();
-        setArticles(data);
+        
+        // Check if data has the expected structure
+        if (!data.articles || !Array.isArray(data.articles)) {
+          throw new Error('Invalid response format');
+        }
+        
+        setArticles(data.articles);
       } catch (err) {
         console.error('Error fetching articles:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load articles');
+        setArticles([]);
+      } finally {
+        setLoading(false);
       }
-      setMounted(true);
     };
 
     fetchArticles();
   }, []);
 
-  if (!mounted) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 pt-24 pb-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -48,6 +63,25 @@ export default function Home() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 pt-24 pb-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-2xl font-semibold text-gray-900">Error</h2>
+            <p className="mt-2 text-gray-600">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 pt-24 pb-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -61,9 +95,7 @@ export default function Home() {
           </button>
         </div>
 
-        <div className="container mx-auto px-4 py-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-8">Latest Tech News</h1>
-          
+        <div className="container mx-auto">
           {/* Top ad */}
           <AdContainer 
             slot="1234567890"
@@ -73,11 +105,11 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {articles.map((article, index) => (
-              <>
-                <NewsCard key={article.url} article={article} />
+              <div key={article.url}>
+                <NewsCard article={article} />
                 {/* Insert ad after every 6th article */}
                 {(index + 1) % 6 === 0 && (
-                  <div className="col-span-full">
+                  <div className="col-span-full mt-6">
                     <AdContainer 
                       slot="9876543210"
                       format="fluid"
@@ -85,7 +117,7 @@ export default function Home() {
                     />
                   </div>
                 )}
-              </>
+              </div>
             ))}
           </div>
 
@@ -99,7 +131,7 @@ export default function Home() {
 
         <NewsletterDialog
           isOpen={isNewsletterOpen}
-          setIsOpen={setIsNewsletterOpen}
+          onClose={() => setIsNewsletterOpen(false)}
         />
       </div>
     </div>
