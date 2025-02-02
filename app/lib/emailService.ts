@@ -85,7 +85,7 @@ export async function sendNewsletterEmail(to: string, template: EmailTemplate) {
       to: [to],
       subject: `Your ${frequency} Tech News Update`,
       html: html,
-      reply_to: 'support@eventhorizonlive.space'
+      replyTo: 'support@eventhorizonlive.space'
     });
 
     if (error) {
