@@ -1,104 +1,92 @@
-'use client';
-
+import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useSession } from 'next-auth/react';
-import { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
-import { Article } from '../types';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { Article } from '@/app/types';
+import { formatDistanceToNow } from 'date-fns';
+import { supabase } from '@/app/lib/supabase';
 
 interface NewsCardProps {
   article: Article;
+  showSaveButton?: boolean;
 }
 
-export default function NewsCard({ article }: NewsCardProps) {
-  const { data: session } = useSession();
+const NewsCard = ({ article, showSaveButton = true }: NewsCardProps) => {
   const [isSaved, setIsSaved] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    const checkSavedStatus = async () => {
-      if (!session?.user?.email) return;
+  const handleSave = async () => {
+    try {
+      setIsLoading(true);
 
+      // Check if article is already saved
       const { data } = await supabase
         .from('saved_articles')
-        .select()
-        .eq('user_email', session.user.email)
-        .eq('article_url', article.url)
+        .select('*')
+        .eq('url', article.url)
         .single();
 
-      setIsSaved(!!data);
-    };
-
-    checkSavedStatus();
-  }, [session, article.url]);
-
-  const handleSaveArticle = async () => {
-    if (!session?.user?.email) return;
-
-    try {
-      if (isSaved) {
+      if (data) {
+        // Article exists, remove it
         await supabase
           .from('saved_articles')
           .delete()
-          .eq('user_email', session.user.email)
-          .eq('article_url', article.url);
+          .eq('url', article.url);
+        setIsSaved(false);
       } else {
+        // Article doesn't exist, save it
         await supabase
           .from('saved_articles')
-          .insert([
-            {
-              user_email: session.user.email,
-              article_url: article.url,
-              article_title: article.title,
-              article_image: article.urlToImage,
-              saved_at: new Date().toISOString(),
-            },
-          ]);
+          .insert([article]);
+        setIsSaved(true);
       }
-      setIsSaved(!isSaved);
-    } catch (err) {
-      console.error('Error toggling article save:', err);
+    } catch (error) {
+      console.error('Error saving article:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden">
-      <div className="relative h-48">
-        <Image
-          src={article.urlToImage || '/placeholder.jpg'}
-          alt={article.title}
-          fill
-          className="object-cover"
-        />
-      </div>
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+      {article.urlToImage && (
+        <div className="relative h-48">
+          <Image
+            src={article.urlToImage}
+            alt={article.title}
+            fill
+            style={{ objectFit: 'cover' }}
+          />
+        </div>
+      )}
       <div className="p-4">
-        <h2 className="text-xl font-semibold mb-2">
-          <Link href={`/article/${encodeURIComponent(article.url)}`}>
+        <h2 className="text-xl font-semibold mb-2 text-gray-800 dark:text-white">
+          <Link href={`/article?url=${encodeURIComponent(article.url)}`} className="hover:text-blue-600 dark:hover:text-blue-400">
             {article.title}
           </Link>
         </h2>
-        <p className="text-gray-600 mb-4">{article.description}</p>
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-500">{article.source.name}</span>
-          {session?.user && (
-            <button
-              onClick={handleSaveArticle}
-              className={`px-3 py-1 rounded text-sm ${
-                isSaved
-                  ? 'bg-green-100 text-green-700'
-                  : 'bg-gray-100 text-gray-700'
-              }`}
-            >
-              {isSaved ? 'Saved' : 'Save'}
-            </button>
-          )}
+        <p className="text-gray-600 dark:text-gray-300 mb-4">{article.description}</p>
+        <div className="flex justify-between items-center text-sm text-gray-500 dark:text-gray-400">
+          <span>{article.source.name}</span>
+          <div className="flex items-center space-x-4">
+            <span>{formatDistanceToNow(new Date(article.publishedAt), { addSuffix: true })}</span>
+            {showSaveButton && (
+              <button
+                onClick={handleSave}
+                disabled={isLoading}
+                className={`px-3 py-1 rounded ${
+                  isSaved
+                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
+                    : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                }`}
+              >
+                {isSaved ? 'Saved' : 'Save'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default NewsCard;

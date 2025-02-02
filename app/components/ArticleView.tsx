@@ -1,142 +1,146 @@
 'use client';
 
-import Image from 'next/image';
-import { useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { useSession } from 'next-auth/react';
 import AdContainer from './AdContainer';
-import { Article } from '../types';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { supabase } from '@/app/lib/supabase';
 
 interface ArticleViewProps {
   url: string;
-  onError: (error: string) => void;
+  onError?: (error: string) => void;
+}
+
+interface ArticleContent {
+  title: string;
+  content: string;
+  byline?: string;
+  siteName?: string;
 }
 
 export default function ArticleView({ url, onError }: ArticleViewProps) {
   const { data: session } = useSession();
+  const [article, setArticle] = useState<ArticleContent | null>(null);
   const [isSaved, setIsSaved] = useState(false);
-  const [article, setArticle] = useState<Article | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [saveLoading, setSaveLoading] = useState(false);
 
   useEffect(() => {
-    async function fetchArticle() {
+    const fetchArticle = async () => {
       try {
+        setIsLoading(true);
         const response = await fetch(`/api/news/article?url=${encodeURIComponent(url)}`);
         if (!response.ok) {
           throw new Error('Failed to fetch article');
         }
         const data = await response.json();
-        setArticle(data);
+        setArticle(data.article);
       } catch (error) {
         console.error('Error fetching article:', error);
-        onError('Failed to load article. Redirecting to original source...');
+        onError?.(error instanceof Error ? error.message : 'Failed to load article');
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
-    }
+    };
 
-    fetchArticle();
+    if (url) {
+      fetchArticle();
+    }
   }, [url, onError]);
 
   useEffect(() => {
-    async function checkSavedStatus() {
-      if (!session?.user?.email || !article) return;
+    const checkSavedStatus = async () => {
+      if (!session?.user?.email) return;
 
-      const { data } = await supabase
-        .from('saved_articles')
-        .select('*')
-        .eq('user_email', session.user.email)
-        .eq('url', article.url)
-        .single();
+      try {
+        const { data } = await supabase
+          .from('saved_articles')
+          .select()
+          .eq('url', url)
+          .single();
 
-      setIsSaved(!!data);
-    }
+        setIsSaved(!!data);
+      } catch (error) {
+        console.error('Error checking saved status:', error);
+      }
+    };
 
     checkSavedStatus();
-  }, [session?.user?.email, article]);
+  }, [session, url]);
 
-  const handleSaveArticle = async () => {
+  const handleSave = async () => {
     if (!session?.user?.email || !article) return;
 
     try {
+      setSaveLoading(true);
+
       if (isSaved) {
         await supabase
           .from('saved_articles')
           .delete()
-          .eq('user_email', session.user.email)
-          .eq('url', article.url);
+          .eq('url', url);
+        setIsSaved(false);
       } else {
         await supabase.from('saved_articles').insert([
           {
-            user_email: session.user.email,
-            url: article.url,
+            url,
             title: article.title,
-            description: article.description,
-            image_url: article.urlToImage,
-            published_at: article.publishedAt,
+            content: article.content,
+            user_email: session.user.email,
           },
         ]);
+        setIsSaved(true);
       }
-      setIsSaved(!isSaved);
     } catch (error) {
       console.error('Error saving article:', error);
+    } finally {
+      setSaveLoading(false);
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading article...</p>
+      <div className="container mx-auto px-4 py-8">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-5/6"></div>
         </div>
       </div>
     );
   }
 
   if (!article) {
-    return null;
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center text-red-600">
+          Failed to load article content.
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="container mx-auto px-4 py-8">
       <article className="prose lg:prose-xl mx-auto">
-        <h1 className="text-3xl font-bold mb-4">{article.title}</h1>
-        
-        {article.urlToImage && (
-          <div className="relative w-full h-64 md:h-96 mb-8">
-            <Image
-              src={article.urlToImage}
-              alt={article.title}
-              fill
-              className="object-cover rounded-lg"
-            />
-          </div>
-        )}
-
-        <div className="flex items-center justify-between mb-8">
-          <div className="text-gray-600">
-            {new Date(article.publishedAt).toLocaleDateString()}
-          </div>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="mb-0">{article.title}</h1>
           {session?.user && (
             <button
-              onClick={handleSaveArticle}
-              className={`px-4 py-2 rounded-md ${
+              onClick={handleSave}
+              disabled={saveLoading}
+              className={`px-4 py-2 rounded ${
                 isSaved
-                  ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
+                  : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
               }`}
             >
-              {isSaved ? 'Unsave Article' : 'Save Article'}
+              {isSaved ? 'Saved' : 'Save Article'}
             </button>
           )}
         </div>
 
+        {/* First ad */}
         <div className="my-4">
           <AdContainer
             slot="5891354408"
@@ -151,17 +155,24 @@ export default function ArticleView({ url, onError }: ArticleViewProps) {
           dangerouslySetInnerHTML={{ __html: article.content }}
         />
 
-        <div className="mt-8">
+        {article.byline && (
+          <div className="mt-8 text-gray-600">
+            By {article.byline}
+          </div>
+        )}
+
+        {article.siteName && (
           <a
-            href={article.url}
+            href={url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-indigo-600 hover:text-indigo-800"
+            className="text-blue-600 hover:text-blue-800"
           >
-            Read original article
+            Read on {article.siteName}
           </a>
-        </div>
+        )}
 
+        {/* Second ad */}
         <div className="my-4">
           <AdContainer
             slot="5891354408"
