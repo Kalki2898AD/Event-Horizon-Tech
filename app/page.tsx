@@ -21,33 +21,23 @@ function AdPlaceholder() {
 
 export default function Home() {
   const [articles, setArticles] = useState<Article[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const [isNewsletterOpen, setIsNewsletterOpen] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-    const fetchNews = async () => {
+    const fetchArticles = async () => {
       try {
         const response = await fetch('/api/news');
-        if (!response.ok) {
-          throw new Error('Failed to fetch news');
-        }
         const data = await response.json();
-        setArticles(data.articles || []);
-      } catch (error) {
-        console.error('Error fetching news:', error);
-        setError('Failed to load news. Please try again later.');
-      } finally {
-        setLoading(false);
+        setArticles(data);
+      } catch (err) {
+        console.error('Error fetching articles:', err);
       }
+      setMounted(true);
     };
 
-    if (mounted) {
-      fetchNews();
-    }
-  }, [mounted]);
+    fetchArticles();
+  }, []);
 
   if (!mounted) {
     return (
@@ -83,12 +73,6 @@ export default function Home() {
             Subscribe to Updates
           </button>
         </div>
-
-        {error && (
-          <div className="text-center py-6 bg-red-50 rounded-lg mb-8">
-            <p className="text-red-600">{error}</p>
-          </div>
-        )}
 
         <div className="container mx-auto px-4 py-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-8">Latest Tech News</h1>

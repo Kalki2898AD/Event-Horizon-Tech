@@ -12,7 +12,7 @@ interface AdContainerProps {
 const AdContainer = ({ slot, format = 'auto', layout = 'display', className = '' }: AdContainerProps) => {
   useEffect(() => {
     try {
-      // @ts-ignore
+      // @ts-expect-error - adsbygoogle is injected by Google AdSense script
       (window.adsbygoogle = window.adsbygoogle || []).push({});
     } catch (err) {
       console.error('AdSense error:', err);

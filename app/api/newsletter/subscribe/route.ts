@@ -124,20 +124,25 @@ async function sendWelcomeEmail(email: string, frequency: string) {
   }
 }
 
-export async function POST(request: Request) {
+interface SubscribeRequest {
+  email: string;
+  frequency: 'daily' | 'weekly' | 'monthly';
+}
+
+export async function POST(request: Request): Promise<Response> {
   try {
     console.log('Processing newsletter subscription...');
-    const { email, frequency } = await request.json();
-    console.log('Received subscription request:', { email, frequency });
+    const body = (await request.json()) as SubscribeRequest;
+    console.log('Received subscription request:', body);
 
-    if (!email) {
+    if (!body.email) {
       return NextResponse.json(
         { error: 'Email is required' },
         { status: 400 }
       );
     }
 
-    if (!frequency || !['daily', 'weekly', 'monthly'].includes(frequency)) {
+    if (!body.frequency || !['daily', 'weekly', 'monthly'].includes(body.frequency)) {
       return NextResponse.json(
         { error: 'Invalid frequency' },
         { status: 400 }
@@ -148,7 +153,7 @@ export async function POST(request: Request) {
     const { data: existingSubscriber, error: fetchError } = await supabase
       .from('newsletter_subscribers')
       .select()
-      .eq('email', email)
+      .eq('email', body.email)
       .single();
 
     if (fetchError && fetchError.code !== 'PGRST116') {
@@ -161,10 +166,10 @@ export async function POST(request: Request) {
       const { error: updateError } = await supabase
         .from('newsletter_subscribers')
         .update({ 
-          frequency,
+          frequency: body.frequency,
           updated_at: new Date().toISOString()
         })
-        .eq('email', email);
+        .eq('email', body.email);
 
       if (updateError) {
         console.error('Error updating subscriber:', updateError);
@@ -182,8 +187,8 @@ export async function POST(request: Request) {
       .from('newsletter_subscribers')
       .insert([
         {
-          email,
-          frequency,
+          email: body.email,
+          frequency: body.frequency,
           subscribed_at: new Date().toISOString(),
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
@@ -199,7 +204,7 @@ export async function POST(request: Request) {
 
     // Send welcome email for new subscribers
     try {
-      await sendWelcomeEmail(email, frequency);
+      await sendWelcomeEmail(body.email, body.frequency);
       console.log('Welcome email sent successfully');
     } catch (emailError) {
       console.error('Failed to send welcome email:', emailError);

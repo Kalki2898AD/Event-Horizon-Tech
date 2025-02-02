@@ -144,11 +144,11 @@ export default function SearchPage() {
           </div>
         ) : !loading && query?.trim() ? (
           <div className="text-center py-12">
-            <h2 className="text-2xl font-semibold text-gray-900">
-              No articles found for "{query}"
+            <h2 className="text-2xl font-semibold text-gray-700 mb-4">
+              No results found for &ldquo;{query}&rdquo;
             </h2>
-            <p className="mt-2 text-gray-600">
-              Try searching with different keywords
+            <p className="text-gray-500">
+              Try different keywords or check your spelling
             </p>
           </div>
         ) : null}

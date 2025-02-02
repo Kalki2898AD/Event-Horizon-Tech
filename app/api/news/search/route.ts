@@ -1,10 +1,24 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import axios from 'axios';
+
+interface NewsAPIResponse {
+  articles: {
+    url: string;
+    title: string;
+    description: string;
+    urlToImage: string;
+    publishedAt: string;
+    content: string;
+    source: {
+      name: string;
+    };
+  }[];
+}
 
 const NEWS_API_KEY = process.env.NEWS_API_KEY;
 const BASE_URL = 'https://newsapi.org/v2';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   if (!NEWS_API_KEY) {
     return NextResponse.json(
       { error: 'News API key is not configured' },
@@ -12,7 +26,7 @@ export async function GET(request: Request) {
     );
   }
 
-  const { searchParams } = new URL(request.url);
+  const searchParams = request.nextUrl.searchParams;
   const query = searchParams.get('q');
 
   if (!query) {
@@ -34,11 +48,13 @@ export async function GET(request: Request) {
       timeout: 5000, // 5 second timeout
     });
 
-    if (!response.data?.articles || !Array.isArray(response.data.articles)) {
+    const data: NewsAPIResponse = response.data;
+
+    if (!data.articles || !Array.isArray(data.articles)) {
       throw new Error('Invalid response from News API');
     }
 
-    const articles = response.data.articles.map((article: any) => ({
+    const articles = data.articles.map((article) => ({
       id: article.url,
       title: article.title || 'Untitled',
       description: article.description || '',

@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 
@@ -92,17 +92,14 @@ async function sendNewsletterToSubscriber(email: string, frequency: string, arti
   return data;
 }
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest): Promise<Response> {
   try {
     // Verify cron secret
-    const { searchParams } = new URL(request.url);
+    const searchParams = request.nextUrl.searchParams;
     const secret = searchParams.get('secret');
-    
+
     if (secret !== process.env.CRON_SECRET) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return new Response('Unauthorized', { status: 401 });
     }
 
     console.log('Starting newsletter distribution...');
@@ -163,15 +160,17 @@ export async function GET(request: Request) {
       }
     }
 
-    return NextResponse.json({
+    return new Response(JSON.stringify({
       message: 'Newsletter distribution completed',
       results
+    }), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json'
+      }
     });
   } catch (error) {
     console.error('Newsletter distribution error:', error);
-    return NextResponse.json(
-      { error: 'Failed to distribute newsletters' },
-      { status: 500 }
-    );
+    return new Response('Failed to distribute newsletters', { status: 500 });
   }
 }
