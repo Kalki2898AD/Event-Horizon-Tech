@@ -8,8 +8,23 @@ import AuthProvider from './providers/AuthProvider';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Event Horizon Tech',
-  description: 'Latest Technology News and Updates',
+  title: 'Event Horizon Tech - Latest Technology News and Updates',
+  description: 'Stay updated with the latest technology news, reviews, and insights. Event Horizon Tech brings you comprehensive coverage of tech innovations, gadgets, and digital trends.',
+  keywords: 'technology news, tech updates, digital trends, tech reviews, Event Horizon Tech',
+  openGraph: {
+    title: 'Event Horizon Tech - Latest Technology News and Updates',
+    description: 'Stay updated with the latest technology news, reviews, and insights.',
+    url: 'https://eventhorizonlive.space',
+    siteName: 'Event Horizon Tech',
+    type: 'website',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  verification: {
+    google: 'vVLV_ZoSTdieaP_NDwJTuk02mo_bz38IEAaJnkGpmko',
+  },
 };
 
 export default function RootLayout({
@@ -26,6 +41,7 @@ export default function RootLayout({
           crossOrigin="anonymous"
           strategy="afterInteractive"
         />
+        <meta name="google-site-verification" content="vVLV_ZoSTdieaP_NDwJTuk02mo_bz38IEAaJnkGpmko" />
       </head>
       <body className={inter.className}>
         <AuthProvider>
