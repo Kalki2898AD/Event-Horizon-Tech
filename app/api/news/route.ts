@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { fetchTechNews, searchNews } from '@/app/lib/newsApi';
 import { supabase } from '@/app/lib/supabase';
-import type { Article } from '@/app/lib/supabase';
+import type { Article } from '@/app/types';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -10,7 +10,7 @@ export async function GET(request: Request) {
   console.log('Fetching news...');
 
   try {
-    let articles;
+    let articles: Article[] = [];
     if (query) {
       console.log('Searching news with query:', query);
       articles = await searchNews(query);
@@ -19,30 +19,38 @@ export async function GET(request: Request) {
       articles = await fetchTechNews();
     }
 
-    console.log(`Received ${articles.length} articles`);
-
     if (!articles || articles.length === 0) {
       console.error('No articles returned');
-      throw new Error('No articles available');
+      return NextResponse.json({ error: 'No articles available' }, { status: 404 });
     }
 
-    // Store articles in Supabase for caching
-    console.log('Storing articles in Supabase...');
-    await supabase
-      .from('articles')
-      .upsert(
-        articles.map((article: Article) => ({
-          ...article,
-          id: article.url,
-          created_at: new Date().toISOString(),
-        }))
-      );
+    console.log(`Received ${articles.length} articles`);
 
-    console.log('Articles stored in Supabase');
+    // Store articles in Supabase for caching
+    if (articles.length > 0) {
+      console.log('Storing articles in Supabase...');
+      const { error } = await supabase
+        .from('articles')
+        .upsert(
+          articles.map((article: Article) => ({
+            ...article,
+            created_at: new Date().toISOString(),
+          }))
+        );
+
+      if (error) {
+        console.error('Error storing articles in Supabase:', error);
+      } else {
+        console.log('Articles stored in Supabase');
+      }
+    }
 
     return NextResponse.json({ articles });
   } catch (error) {
     console.error('Error in news route:', error);
-    return NextResponse.json({ error: 'Failed to fetch news' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to fetch news' },
+      { status: 500 }
+    );
   }
 }

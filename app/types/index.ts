@@ -1,15 +1,15 @@
 export interface Article {
-  id: string;
+  id?: string;
   title: string;
   description: string;
   url: string;
-  urlToImage: string;
+  urlToImage?: string;
   publishedAt: string;
-  content: string;
-  fullContent?: string;
   source: {
     name: string;
   };
+  content: string;
+  user_email?: string;
 }
 
 export interface NewsletterSubscriber {
@@ -31,4 +31,10 @@ export interface ReadabilityArticle {
   byline: string;
   dir: string;
   siteName: string;
+}
+
+export interface NewsAPIResponse {
+  status: string;
+  totalResults: number;
+  articles: Article[];
 }
