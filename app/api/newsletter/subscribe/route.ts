@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient, PostgrestError } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 
 // Initialize Supabase client
@@ -15,9 +15,9 @@ interface SubscribeRequest {
   frequency: 'daily' | 'weekly' | 'monthly';
 }
 
-interface Article {
+interface NewsArticle {
   title: string;
-  description: string;
+  description: string | null;
   url: string;
 }
 
@@ -32,11 +32,11 @@ async function sendWelcomeEmail(email: string, frequency: string) {
     );
     
     const newsData = await response.json();
-    const articles = newsData.articles || [];
+    const articles = (newsData.articles || []) as NewsArticle[];
 
     const articlesList = articles
       .map(
-        (article: any) => `
+        (article) => `
           <div style="margin-bottom: 20px;">
             <h3 style="margin: 0;">${article.title}</h3>
             <p style="margin: 5px 0;">${article.description || ''}</p>
