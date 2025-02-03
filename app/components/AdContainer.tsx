@@ -6,6 +6,7 @@ interface AdContainerProps {
   className?: string;
   width?: number;
   height?: number;
+  layout?: 'in-article' | 'in-feed';
 }
 
 // Import the client component dynamically with no SSR

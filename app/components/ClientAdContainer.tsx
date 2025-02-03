@@ -8,6 +8,7 @@ interface AdContainerProps {
   className?: string;
   width?: number;
   height?: number;
+  layout?: 'in-article' | 'in-feed';
 }
 
 // Type declaration for window.adsbygoogle
@@ -26,7 +27,8 @@ export default function ClientAdContainer({
   format = 'auto',
   className = '',
   width = 300,
-  height = 250
+  height = 250,
+  layout
 }: AdContainerProps) {
   const adId = useId();
 
@@ -81,6 +83,7 @@ export default function ClientAdContainer({
         data-ad-client="ca-pub-9131964371118756"
         data-ad-slot={slot}
         data-ad-format={format}
+        data-ad-layout={layout}
         data-full-width-responsive="true"
       />
     </div>
