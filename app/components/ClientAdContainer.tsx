@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId } from 'react';
+import { useEffect, useId, useState } from 'react';
 
 interface AdContainerProps {
   slot: string;
@@ -31,6 +31,7 @@ export default function ClientAdContainer({
   layout
 }: AdContainerProps) {
   const adId = useId();
+  const [isAdBlocked, setIsAdBlocked] = useState(false);
 
   useEffect(() => {
     const initializeAd = () => {
@@ -40,20 +41,32 @@ export default function ClientAdContainer({
           initializedAds.add(adId);
         } catch (err) {
           console.error('AdSense error:', err);
+          setIsAdBlocked(true);
         }
       }
     };
 
-    if (!scriptLoaded) {
+    const loadScript = () => {
       const script = document.createElement('script');
       script.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9131964371118756';
       script.async = true;
       script.crossOrigin = 'anonymous';
+      
+      script.onerror = () => {
+        console.log('Ad script failed to load - likely blocked by ad blocker');
+        setIsAdBlocked(true);
+      };
+      
       script.onload = () => {
         scriptLoaded = true;
         initializeAd();
       };
+      
       document.head.appendChild(script);
+    };
+
+    if (!scriptLoaded) {
+      loadScript();
     } else {
       initializeAd();
     }
@@ -62,6 +75,26 @@ export default function ClientAdContainer({
       initializedAds.delete(adId);
     };
   }, [adId]);
+
+  if (isAdBlocked) {
+    return (
+      <div 
+        className={`flex justify-center items-center mx-auto text-gray-500 text-sm ${className}`}
+        style={{
+          width: width,
+          height: height,
+          overflow: 'hidden',
+          border: '1px dashed #CBD5E0',
+          borderRadius: '0.375rem',
+          backgroundColor: '#F7FAFC'
+        }}
+      >
+        <p className="text-center px-4">
+          Please disable your ad blocker to support our content
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div 

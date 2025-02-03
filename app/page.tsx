@@ -30,13 +30,13 @@ export default function Home() {
         setLoading(true);
         setError(null);
         const response = await fetch('/api/news');
-        if (!response.ok) {
-          throw new Error('Failed to fetch articles');
-        }
         const data = await response.json();
         
-        // Check if data has the expected structure
-        if (!data.articles || !Array.isArray(data.articles)) {
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to fetch articles');
+        }
+        
+        if (!Array.isArray(data.articles)) {
           throw new Error('Invalid response format');
         }
         

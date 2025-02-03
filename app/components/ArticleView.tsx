@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import Image from 'next/image';
 import AdContainer from './AdContainer';
-import { supabase } from '@/app/lib/supabase';
+import { getSupabaseClient } from '@/app/lib/supabase';
 
 interface ArticleViewProps {
   url: string;
@@ -54,7 +54,8 @@ export default function ArticleView({ url, onError }: ArticleViewProps) {
       if (!session?.user?.email) return;
 
       try {
-        const { data } = await supabase
+        const supabaseClient = getSupabaseClient();
+        const { data } = await supabaseClient
           .from('saved_articles')
           .select()
           .eq('url', url)
@@ -75,14 +76,16 @@ export default function ArticleView({ url, onError }: ArticleViewProps) {
     try {
       setSaveLoading(true);
 
+      const supabaseClient = getSupabaseClient();
+
       if (isSaved) {
-        await supabase
+        await supabaseClient
           .from('saved_articles')
           .delete()
           .eq('url', url);
         setIsSaved(false);
       } else {
-        await supabase.from('saved_articles').insert([
+        await supabaseClient.from('saved_articles').insert([
           {
             url,
             title: article.title,
