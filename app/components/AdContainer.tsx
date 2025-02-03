@@ -1,64 +1,25 @@
-'use client';
-
-import { useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
 
 interface AdContainerProps {
   slot: string;
-  format?: 'auto' | 'fluid';
-  layout?: 'in-article';
+  format?: 'auto' | 'fluid' | 'rectangle';
   className?: string;
+  width?: number;
+  height?: number;
 }
 
-interface AdSenseConfig {
-  google_ad_client: string;
-  enable_page_level_ads: boolean;
-}
-
-declare global {
-  interface Window {
-    adsbygoogle: Array<AdSenseConfig | { push: (params: AdSenseConfig) => void }>;
+// Import the client component dynamically with no SSR
+const ClientAdContainer = dynamic(
+  () => import('./ClientAdContainer'),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-full bg-gray-100 animate-pulse rounded-md" />
+    )
   }
+);
+
+// Server component wrapper
+export default function AdContainer(props: AdContainerProps) {
+  return <ClientAdContainer {...props} />;
 }
-
-const AdContainer = ({ slot, format = 'auto', layout, className = '' }: AdContainerProps) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    try {
-      if (typeof window !== 'undefined') {
-        if (!window.adsbygoogle) {
-          window.adsbygoogle = [];
-        }
-        window.adsbygoogle.push({
-          google_ad_client: 'ca-pub-9131964371118756',
-          enable_page_level_ads: true
-        });
-      }
-    } catch (error) {
-      console.error('Error initializing ad:', error);
-    }
-  }, []);
-
-  return (
-    <div 
-      ref={containerRef}
-      className={`w-full flex justify-center items-center ${className}`}
-      style={{
-        minHeight: '250px',
-        backgroundColor: '#ffffff'
-      }}
-    >
-      <ins
-        className="adsbygoogle w-full h-[250px]"
-        style={{ display: 'block' }}
-        data-ad-client="ca-pub-9131964371118756"
-        data-ad-slot={slot}
-        data-ad-format={format}
-        {...(layout && { 'data-ad-layout': layout })}
-        data-full-width-responsive="true"
-      />
-    </div>
-  );
-};
-
-export default AdContainer;

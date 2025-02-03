@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import NewsCard from './components/NewsCard';
 import NewsletterDialog from './components/NewsletterDialog';
-import AdContainer from './components/AdContainer'; 
+import AdContainer from './components/AdContainer';
+import ScrollToTop from './components/ScrollToTop';
 import { Article } from '@/app/types';
 
 const AdSection = ({ children }: { children: React.ReactNode }) => (
@@ -94,7 +95,8 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-24 pb-10">
+    <main className="min-h-screen bg-gray-50 pt-24 pb-10">
+      <ScrollToTop />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Latest Tech News</h1>
@@ -106,26 +108,43 @@ export default function Home() {
           </button>
         </div>
 
-        {/* Top ad - full width */}
+        {/* Top ad */}
         <AdSection>
-          <AdContainer slot="1234567890" format="auto" />
+          <AdContainer slot="1234567890" format="auto" width={300} height={250} />
         </AdSection>
 
         {/* News grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {articles.map((article, index) => {
-            const key = article.url || `article-${index}`;
+            // Ensure all required fields are present
+            const processedArticle: Article = {
+              id: article.id || `article-${index}`,
+              url: article.url,
+              title: article.title,
+              description: article.description || article.title,
+              content: article.content,
+              author: article.author || 'Unknown Author',
+              publishedAt: article.publishedAt,
+              source: article.source,
+              urlToImage: article.urlToImage || '/placeholder.jpg',
+              byline: article.byline || article.author || 'Unknown Author',
+              siteName: article.siteName || article.source.name,
+              created_at: article.created_at || article.publishedAt,
+              user_email: article.user_email || 'system@ehtech.news'
+            };
+            
+            const key = processedArticle.url || `article-${index}`;
             return (
               <div key={key} className="contents">
                 <div>
-                  <NewsCard article={article} />
+                  <NewsCard article={processedArticle} />
                 </div>
                 
                 {/* Insert full-width ad after every 6th article */}
                 {(index + 1) % 6 === 0 && (
                   <div className="col-span-full w-full">
                     <AdSection>
-                      <AdContainer slot="9876543210" format="auto" />
+                      <AdContainer slot="9876543210" format="auto" width={300} height={250} />
                     </AdSection>
                   </div>
                 )}
@@ -134,9 +153,9 @@ export default function Home() {
           })}
         </div>
 
-        {/* Bottom ad - full width */}
+        {/* Bottom ad */}
         <AdSection>
-          <AdContainer slot="5432109876" format="auto" />
+          <AdContainer slot="5432109876" format="auto" width={300} height={250} />
         </AdSection>
 
         <NewsletterDialog
@@ -144,6 +163,6 @@ export default function Home() {
           setIsOpen={setIsNewsletterOpen}
         />
       </div>
-    </div>
+    </main>
   );
 }

@@ -1,20 +1,20 @@
 export interface Article {
-  id?: string;
+  id: string;
   url: string;
   title: string;
-  description?: string;
+  description: string;
   content: string;
-  author?: string;
+  author: string;
   publishedAt: string;
   source: {
     id?: string;
     name: string;
   };
-  urlToImage?: string;
-  byline?: string;
-  siteName?: string;
-  created_at?: string;
-  user_email?: string;
+  urlToImage: string;
+  byline: string;
+  siteName: string;
+  created_at: string;
+  user_email: string;
 }
 
 export interface NewsletterSubscriber {

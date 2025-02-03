@@ -24,14 +24,19 @@ export default function Navbar() {
             <span className="text-2xl font-bold text-indigo-600">EHTech News</span>
           </Link>
 
-          <div className="flex-1 max-w-xl mx-8">
+          <div className="relative flex-1 max-w-xl mx-4">
             <form onSubmit={handleSearch} className="relative">
               <input
                 type="text"
+                placeholder="Search articles..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search articles..."
-                className="w-full px-4 py-2 text-gray-900 bg-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white"
+                className="w-full px-4 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                style={{
+                  minWidth: '200px',
+                  WebkitAppearance: 'none',
+                  appearance: 'none'
+                }}
               />
               <button
                 type="submit"
