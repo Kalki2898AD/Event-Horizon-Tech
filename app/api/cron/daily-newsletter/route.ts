@@ -56,29 +56,37 @@ async function sendNewsletter(email: string, articles: NewsArticle[], frequency:
   const articlesList = articles
     .map(
       (article) => `
-        <div style="margin-bottom: 20px;">
-          <h3 style="margin: 0;">${article.title}</h3>
-          <p style="margin: 5px 0;">${article.description || ''}</p>
-          <a href="${article.url}" style="color: #0070f3; text-decoration: none;">Read More</a>
+        <div style="margin-bottom: 20px; padding: 15px; border: 1px solid #eee; border-radius: 5px;">
+          <h3 style="margin: 0; color: #333;">${article.title}</h3>
+          <p style="margin: 10px 0; color: #666;">${article.description || ''}</p>
+          <a href="${article.url}" 
+             style="display: inline-block;
+                    color: #0070f3;
+                    text-decoration: none;
+                    font-weight: 500;">
+            Read More →
+          </a>
         </div>
       `
     )
     .join('');
 
-  await resend.emails.send({
+  const emailResult = await resend.emails.send({
     from: 'Event Horizon Tech <newsletter@eventhorizonlive.space>',
     to: [email],
     subject: `🚀 Your ${frequencyText} Tech News Digest`,
     replyTo: 'budgetbuddy567@gmail.com',
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h1 style="color: #333; text-align: center;">Your ${frequencyText} Tech News Update 🚀</h1>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h1 style="color: #333; text-align: center; margin-bottom: 30px;">
+          Your ${frequencyText} Tech News Update 🚀
+        </h1>
         
-        <div style="margin-top: 30px;">
+        <div style="margin: 30px 0;">
           ${articlesList}
         </div>
         
-        <div style="margin-top: 30px; text-align: center;">
+        <div style="margin-top: 40px; text-align: center;">
           <a href="https://eventhorizonlive.space" 
              style="display: inline-block; 
                     padding: 12px 24px; 
@@ -90,81 +98,76 @@ async function sendNewsletter(email: string, articles: NewsArticle[], frequency:
             Visit Our Website
           </a>
         </div>
+
+        <div style="margin-top: 30px; text-align: center; color: #666; font-size: 14px;">
+          <p>Have questions or feedback? Just reply to this email!</p>
+          <p style="margin-top: 20px;">
+            You're receiving this because you subscribed to ${frequencyText} updates from Event Horizon Tech.
+          </p>
+        </div>
       </div>
     `
   });
+
+  return emailResult;
 }
 
 export async function GET(request: Request) {
   try {
-    // Verify cron secret
+    // Verify cron secret if provided
     const authHeader = request.headers.get('authorization');
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const now = new Date();
-    const hour = now.getHours();
-
-    // Only run at 8 AM
-    if (hour !== 8) {
-      return NextResponse.json({ message: 'Not newsletter time' });
+    // Fetch latest news
+    const articles = await fetchLatestNews();
+    if (articles.length === 0) {
+      return NextResponse.json({ error: 'No news articles available' }, { status: 404 });
     }
 
-    // Get subscribers for each frequency
+    // Get all subscribers
     const { data: subscribers, error: fetchError } = await supabase
       .from('newsletter_subscribers')
       .select('email, frequency');
 
     if (fetchError) {
-      throw fetchError;
+      console.error('Error fetching subscribers:', fetchError);
+      return NextResponse.json({ error: 'Failed to fetch subscribers' }, { status: 500 });
     }
 
-    // Group subscribers by frequency
-    const groupedSubscribers = subscribers?.reduce((acc, sub) => {
-      if (!acc[sub.frequency]) {
-        acc[sub.frequency] = [];
-      }
-      acc[sub.frequency].push(sub.email);
-      return acc;
-    }, {} as Record<string, string[]>) || {};
-
-    // Fetch latest news
-    const articles = await fetchLatestNews();
-    if (!articles.length) {
-      throw new Error('No news articles available');
+    if (!subscribers || subscribers.length === 0) {
+      return NextResponse.json({ message: 'No subscribers found' }, { status: 200 });
     }
 
-    const results = {
-      daily: 0,
-      weekly: 0,
-      monthly: 0,
-      failed: 0
-    };
-
-    // Send newsletters based on frequency
-    for (const [frequency, emails] of Object.entries(groupedSubscribers)) {
-      if (await shouldSendNewsletter(frequency)) {
-        const sendResults = await Promise.allSettled(
-          emails.map((email) => sendNewsletter(email, articles, frequency))
-        );
-
-        results[frequency as keyof typeof results] = sendResults.filter(
-          (r) => r.status === 'fulfilled'
-        ).length;
-        results.failed += sendResults.filter((r) => r.status === 'rejected').length;
+    // Send newsletters
+    const results = [];
+    for (const subscriber of subscribers) {
+      if (await shouldSendNewsletter(subscriber.frequency)) {
+        try {
+          const result = await sendNewsletter(subscriber.email, articles, subscriber.frequency);
+          results.push({ 
+            email: subscriber.email, 
+            status: 'success', 
+            data: result 
+          });
+        } catch (error) {
+          console.error(`Failed to send newsletter to ${subscriber.email}:`, error);
+          results.push({ 
+            email: subscriber.email, 
+            status: 'failed', 
+            error: error instanceof Error ? error.message : String(error)
+          });
+        }
       }
     }
 
     return NextResponse.json({
-      message: `Newsletters sent: Daily=${results.daily}, Weekly=${results.weekly}, Monthly=${results.monthly} (Failed=${results.failed})`,
+      message: 'Newsletter process completed',
       results
     });
   } catch (error) {
     console.error('Newsletter error:', error);
-    return NextResponse.json(
-      { error: 'Failed to send newsletters' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -68,24 +68,46 @@ export async function POST(request: Request) {
       );
     }
 
-    // Send welcome email asynchronously
+    // Send welcome email
     try {
-      await resend.emails.send({
-        from: 'Tech News <newsletter@ehtech.news>',
+      const emailResult = await resend.emails.send({
+        from: 'Event Horizon Tech <newsletter@eventhorizonlive.space>',
         to: email,
-        subject: 'Welcome to Tech News Newsletter! 🚀',
+        replyTo: 'budgetbuddy567@gmail.com',
+        subject: 'Welcome to Event Horizon Tech Newsletter! 🚀',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #333;">Welcome to Tech News! 🎉</h1>
+            <h1 style="color: #333;">Welcome to Event Horizon Tech! 🎉</h1>
             <p>Thank you for subscribing to our ${frequency} newsletter.</p>
             <p>You'll receive the latest tech news and updates ${frequency}.</p>
-            <p>Stay tuned!</p>
+            <p>If you have any questions or feedback, feel free to reply to this email.</p>
+            <div style="margin-top: 30px; text-align: center;">
+              <a href="https://eventhorizonlive.space" 
+                 style="display: inline-block; 
+                        padding: 12px 24px; 
+                        background-color: #0070f3; 
+                        color: white; 
+                        text-decoration: none; 
+                        border-radius: 5px;
+                        font-weight: bold;">
+                Visit Our Website
+              </a>
+            </div>
           </div>
         `,
       });
+      
+      console.log('Welcome email sent:', emailResult);
     } catch (emailError) {
       console.error('Error sending welcome email:', emailError);
-      // Don't fail the subscription if email fails
+      // Return success but indicate email failed
+      return NextResponse.json(
+        { 
+          message: 'Subscribed successfully but welcome email failed to send. You will still receive newsletters.',
+          emailError: true 
+        },
+        { status: 201 }
+      );
     }
 
     return NextResponse.json(
