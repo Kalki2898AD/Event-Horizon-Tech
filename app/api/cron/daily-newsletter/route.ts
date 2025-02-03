@@ -27,7 +27,7 @@ async function fetchLatestNews(): Promise<NewsArticle[]> {
   }
 }
 
-async function shouldSendNewsletter(frequency: string): boolean {
+async function shouldSendNewsletter(frequency: string): Promise<boolean> {
   const now = new Date();
   const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
   const dayOfMonth = now.getDate();
