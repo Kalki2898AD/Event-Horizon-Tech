@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { kv } from '@vercel/kv';
 import { createHash } from 'crypto';
+import { supabase } from '@/lib/supabase';
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,14 +19,24 @@ export async function GET(request: NextRequest) {
     const hashedEmail = createHash('sha256').update(email).digest('hex');
     if (token !== hashedEmail) {
       return NextResponse.json(
-        { error: 'Invalid unsubscribe link' },
+        { error: 'Invalid token' },
         { status: 400 }
       );
     }
 
-    // Remove from subscribers list
-    const subscriberKey = `subscriber:${email}`;
-    await kv.del(subscriberKey);
+    // Update subscriber in Supabase
+    const { error: updateError } = await supabase
+      .from('newsletter_subscribers')
+      .update({
+        unsubscribed_at: new Date().toISOString()
+      })
+      .eq('email', email)
+      .is('unsubscribed_at', null);
+
+    if (updateError) {
+      console.error('Error updating subscriber:', updateError);
+      throw updateError;
+    }
 
     // Return success page
     const html = `
@@ -59,10 +69,11 @@ export async function GET(request: NextRequest) {
     return new NextResponse(html, {
       headers: { 'Content-Type': 'text/html' },
     });
+
   } catch (error) {
-    console.error('Unsubscribe error:', error);
+    console.error('Error in unsubscribe route:', error);
     return NextResponse.json(
-      { error: 'Failed to unsubscribe' },
+      { error: 'Failed to process unsubscribe request' },
       { status: 500 }
     );
   }

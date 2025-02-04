@@ -130,7 +130,7 @@ export default function Home() {
               byline: article.byline || article.author || 'Unknown Author',
               siteName: article.siteName || article.source.name,
               created_at: article.created_at || article.publishedAt,
-              user_email: article.user_email || 'system@ehtech.news'
+              user_email: article.user_email || 'budgetbuddy567@gmail.com'
             };
             
             const key = processedArticle.url || `article-${index}`;

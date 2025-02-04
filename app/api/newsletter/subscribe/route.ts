@@ -1,24 +1,10 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import { Resend } from 'resend';
+import { NextRequest, NextResponse } from 'next/server';
 import { createHash } from 'crypto';
+import { supabase } from '@/lib/supabase';
 
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-// Initialize Resend
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-function generateUnsubscribeUrl(email: string): string {
-  const token = createHash('sha256').update(email).digest('hex');
-  return `${process.env.NEXT_PUBLIC_APP_URL}/api/newsletter/unsubscribe?email=${encodeURIComponent(email)}&token=${token}`;
-}
-
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const { email, frequency } = await request.json();
+    const { email } = await request.json();
 
     if (!email) {
       return NextResponse.json(
@@ -27,105 +13,58 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check if user already exists
-    const { data: existingUser } = await supabase
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { error: 'Invalid email format' },
+        { status: 400 }
+      );
+    }
+
+    // Check if user is already subscribed
+    const { data: existingSubscriber } = await supabase
       .from('newsletter_subscribers')
-      .select()
+      .select('*')
       .eq('email', email)
+      .is('unsubscribed_at', null)
       .single();
 
-    if (existingUser) {
-      // Update frequency if user exists
-      const { error: updateError } = await supabase
-        .from('newsletter_subscribers')
-        .update({ frequency })
-        .eq('email', email);
-
-      if (updateError) {
-        console.error('Error updating subscription:', updateError);
-        return NextResponse.json(
-          { error: 'Failed to update subscription' },
-          { status: 500 }
-        );
-      }
-
+    if (existingSubscriber) {
       return NextResponse.json(
-        { message: 'Subscription updated successfully' },
+        { message: 'You are already subscribed to our newsletter' },
         { status: 200 }
       );
     }
 
-    // Insert new subscriber
+    // Generate unsubscribe token
+    const unsubscribeToken = createHash('sha256').update(email).digest('hex');
+
+    // Save to Supabase
     const { error: insertError } = await supabase
       .from('newsletter_subscribers')
       .insert([
         {
           email,
-          frequency,
+          frequency: 'daily',
           subscribed_at: new Date().toISOString(),
-        },
+        }
       ]);
 
     if (insertError) {
-      console.error('Error creating subscription:', insertError);
-      return NextResponse.json(
-        { error: 'Failed to create subscription' },
-        { status: 500 }
-      );
+      console.error('Error saving subscriber:', insertError);
+      throw insertError;
     }
 
-    // Send welcome email
-    try {
-      const unsubscribeUrl = generateUnsubscribeUrl(email);
-      const emailResult = await resend.emails.send({
-        from: 'Event Horizon Tech <newsletter@eventhorizonlive.space>',
-        to: [email],
-        replyTo: 'budgetbuddy567@gmail.com',
-        subject: 'Welcome to Event Horizon Tech Newsletter! 🚀',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #333;">Welcome to Event Horizon Tech! 🎉</h1>
-            <p>Thank you for subscribing to our ${frequency} newsletter.</p>
-            <p>You'll receive the latest tech news and updates ${frequency}.</p>
-            <p>If you have any questions or feedback, feel free to reply to this email.</p>
-            <div style="margin-top: 30px; text-align: center;">
-              <a href="https://eventhorizonlive.space" 
-                 style="display: inline-block; 
-                        padding: 12px 24px; 
-                        background-color: #0070f3; 
-                        color: white; 
-                        text-decoration: none; 
-                        border-radius: 5px;
-                        font-weight: bold;">
-                Visit Our Website
-              </a>
-            </div>
-            <p style="margin-top: 20px;">You can unsubscribe from our newsletter by clicking <a href="${unsubscribeUrl}">here</a>.</p>
-          </div>
-        `,
-      });
-      
-      console.log('Welcome email sent:', emailResult);
-    } catch (emailError) {
-      console.error('Error sending welcome email:', emailError);
-      // Return success but indicate email failed
-      return NextResponse.json(
-        { 
-          message: 'Subscribed successfully but welcome email failed to send. You will still receive newsletters.',
-          emailError: true 
-        },
-        { status: 201 }
-      );
-    }
+    return NextResponse.json({
+      message: 'Successfully subscribed to newsletter',
+      unsubscribeToken
+    });
 
-    return NextResponse.json(
-      { message: 'Subscribed successfully' },
-      { status: 201 }
-    );
   } catch (error) {
-    console.error('Subscription error:', error);
+    console.error('Error in subscribe route:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Failed to process subscription' },
       { status: 500 }
     );
   }

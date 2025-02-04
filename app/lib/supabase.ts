@@ -1,35 +1,79 @@
 import { createClient } from '@supabase/supabase-js';
+import { Database } from '@/types/supabase';
 
-if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-  throw new Error('Missing environment variable: NEXT_PUBLIC_SUPABASE_URL');
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('Missing Supabase environment variables');
 }
 
-if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-  throw new Error('Missing environment variable: NEXT_PUBLIC_SUPABASE_ANON_KEY');
-}
+export const supabase = createClient<Database>(
+  supabaseUrl || '',
+  supabaseAnonKey || ''
+);
 
-let supabaseInstance: ReturnType<typeof createClient> | null = null;
-
-export function getSupabaseClient() {
-  if (!supabaseInstance) {
-    supabaseInstance = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-  }
-  return supabaseInstance;
-}
-
-// Database types
 export type Article = {
   id: string;
   title: string;
   description: string;
   url: string;
-  urlToImage: string;
+  urlToImage?: string;
   publishedAt: string;
   source: {
     name: string;
   };
   content: string;
+  created_at?: string;
+  user_email?: string;
+  byline?: string;
+  siteName?: string;
 };
+
+export async function saveArticle(article: Omit<Article, 'id'>) {
+  try {
+    const { data, error } = await supabase
+      .from('articles')
+      .insert([article])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error saving article:', error);
+    return { data: null, error };
+  }
+}
+
+export async function getArticles() {
+  try {
+    const { data, error } = await supabase
+      .from('articles')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error fetching articles:', error);
+    return { data: null, error };
+  }
+}
+
+export async function getArticleByUrl(url: string) {
+  try {
+    const { data, error } = await supabase
+      .from('articles')
+      .select('*')
+      .eq('url', url)
+      .single();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error fetching article:', error);
+    return { data: null, error };
+  }
+}
