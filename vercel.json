@@ -1,0 +1,17 @@
+{
+  "crons": [{
+    "path": "/api/cron/daily-newsletter",
+    "schedule": "0 8 * * *"
+  }],
+  "headers": [
+    {
+      "source": "/api/cron/daily-newsletter",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    }
+  ]
+}
