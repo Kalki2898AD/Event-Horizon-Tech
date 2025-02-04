@@ -2,8 +2,10 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import Navbar from './components/Navbar';
+import Footer from './components/Footer';
 import Script from 'next/script';
 import AuthProvider from './providers/AuthProvider';
+import { Analytics } from '@vercel/analytics/react';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -49,20 +51,24 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <Script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9131964371118756"
-          crossOrigin="anonymous"
-          strategy="beforeInteractive"
-        />
         <meta name="google-adsense-account" content="ca-pub-9131964371118756" />
         <meta name="google-site-verification" content="vVLV_ZoSTdieaP_NDwJTuk02mo_bz38IEAaJnkGpmko" />
       </head>
       <body className={inter.className}>
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9131964371118756"
+          crossOrigin="anonymous"
+          strategy="lazyOnload"
+        />
         <AuthProvider>
           <Navbar />
-          {children}
+          <main className="min-h-screen">
+            {children}
+          </main>
+          <Footer />
         </AuthProvider>
+        <Analytics />
       </body>
     </html>
   );

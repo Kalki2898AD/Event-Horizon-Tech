@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
+import { createHash } from 'crypto';
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -9,6 +10,11 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // Initialize Resend
 const resend = new Resend(process.env.RESEND_API_KEY);
+
+function generateUnsubscribeUrl(email: string): string {
+  const token = createHash('sha256').update(email).digest('hex');
+  return `${process.env.NEXT_PUBLIC_APP_URL}/api/newsletter/unsubscribe?email=${encodeURIComponent(email)}&token=${token}`;
+}
 
 export async function POST(request: Request) {
   try {
@@ -70,9 +76,10 @@ export async function POST(request: Request) {
 
     // Send welcome email
     try {
+      const unsubscribeUrl = generateUnsubscribeUrl(email);
       const emailResult = await resend.emails.send({
         from: 'Event Horizon Tech <newsletter@eventhorizonlive.space>',
-        to: email,
+        to: [email],
         replyTo: 'budgetbuddy567@gmail.com',
         subject: 'Welcome to Event Horizon Tech Newsletter! 🚀',
         html: `
@@ -93,6 +100,7 @@ export async function POST(request: Request) {
                 Visit Our Website
               </a>
             </div>
+            <p style="margin-top: 20px;">You can unsubscribe from our newsletter by clicking <a href="${unsubscribeUrl}">here</a>.</p>
           </div>
         `,
       });

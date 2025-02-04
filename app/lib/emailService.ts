@@ -1,6 +1,7 @@
 'use client';
 
 import { Resend } from 'resend';
+import { createHash } from 'crypto';
 
 if (!process.env.RESEND_API_KEY) {
   console.error('RESEND_API_KEY is not set in environment variables');
@@ -15,6 +16,11 @@ interface EmailTemplate {
     url: string;
     description: string;
   }>;
+}
+
+function generateUnsubscribeUrl(email: string): string {
+  const token = createHash('sha256').update(email).digest('hex');
+  return `${process.env.NEXT_PUBLIC_APP_URL}/api/newsletter/unsubscribe?email=${encodeURIComponent(email)}&token=${token}`;
 }
 
 export async function sendNewsletterEmail(to: string, template: EmailTemplate) {
@@ -46,6 +52,8 @@ export async function sendNewsletterEmail(to: string, template: EmailTemplate) {
       )
       .join('');
 
+    const unsubscribeUrl = generateUnsubscribeUrl(to);
+
     const html = `
       <!DOCTYPE html>
       <html>
@@ -71,7 +79,7 @@ export async function sendNewsletterEmail(to: string, template: EmailTemplate) {
               You're receiving this email because you subscribed to ${frequency} updates from Event Horizon Tech.
             </p>
             <p style="color: #6B7280; margin: 10px 0 0;">
-              <a href="{unsubscribe_url}" style="color: #4F46E5; text-decoration: none;">Unsubscribe</a>
+              <a href="${unsubscribeUrl}" style="color: #4F46E5; text-decoration: none;">Unsubscribe</a>
             </p>
           </footer>
         </body>
@@ -85,7 +93,7 @@ export async function sendNewsletterEmail(to: string, template: EmailTemplate) {
       to: [to],
       subject: `Your ${frequency} Tech News Update`,
       html: html,
-      replyTo: 'support@eventhorizonlive.space'
+      replyTo: 'budgetbuddy567@gmail.com'
     });
 
     if (error) {
@@ -97,7 +105,6 @@ export async function sendNewsletterEmail(to: string, template: EmailTemplate) {
     return data;
   } catch (error) {
     console.error('Email service error:', error);
-    // Log the full error object for debugging
     console.error('Full error details:', JSON.stringify(error, null, 2));
     throw error;
   }

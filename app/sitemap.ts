@@ -28,6 +28,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 1,
     },
     {
+      url: 'https://eventhorizonlive.space/search',
+      lastModified: new Date(),
+      changeFrequency: 'daily' as const,
+      priority: 0.8,
+    },
+    {
+      url: 'https://eventhorizonlive.space/article',
+      lastModified: new Date(),
+      changeFrequency: 'daily' as const,
+      priority: 0.8,
+    },
+    {
       url: 'https://eventhorizonlive.space/about',
       lastModified: new Date(),
       changeFrequency: 'monthly' as const,

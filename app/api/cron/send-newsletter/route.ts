@@ -62,7 +62,7 @@ async function sendNewsletterToSubscriber(email: string, frequency: string, arti
     from: 'Event Horizon Tech <newsletter@eventhorizonlive.space>',
     to: [email],
     subject: `Your ${frequency} Tech News Digest`,
-    replyTo: 'support@eventhorizonlive.space',
+    replyTo: 'budgetbuddy567@gmail.com',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h1 style="color: #333; text-align: center;">Your ${frequency} Tech News Digest</h1>

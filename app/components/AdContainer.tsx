@@ -1,26 +1,49 @@
-import dynamic from 'next/dynamic';
+'use client';
+
+import { useEffect } from 'react';
 
 interface AdContainerProps {
-  slot: string;
-  format?: 'auto' | 'fluid' | 'rectangle';
   className?: string;
-  width?: number;
-  height?: number;
+  slot: string;
+  format?: 'auto' | 'fluid';
   layout?: 'in-article' | 'in-feed';
+  responsive?: boolean;
 }
 
-// Import the client component dynamically with no SSR
-const ClientAdContainer = dynamic(
-  () => import('./ClientAdContainer'),
-  { 
-    ssr: false,
-    loading: () => (
-      <div className="w-full h-full bg-gray-100 animate-pulse rounded-md" />
-    )
-  }
-);
+export default function AdContainer({ 
+  className = '', 
+  slot,
+  format = 'auto',
+  layout,
+  responsive = true
+}: AdContainerProps) {
+  useEffect(() => {
+    try {
+      const adsbygoogle = (window as any).adsbygoogle;
+      if (adsbygoogle) {
+        adsbygoogle.push({});
+      }
+    } catch (err) {
+      console.error('Error loading ad:', err);
+    }
+  }, []);
 
-// Server component wrapper
-export default function AdContainer(props: AdContainerProps) {
-  return <ClientAdContainer {...props} />;
+  return (
+    <div className={`adsbygoogle-container ${className}`}>
+      <ins
+        className="adsbygoogle"
+        style={{
+          display: 'block',
+          width: '100%',
+          minHeight: '250px',
+          backgroundColor: '#f9fafb'
+        }}
+        data-ad-client="ca-pub-9131964371118756"
+        data-ad-slot={slot}
+        data-ad-format={format}
+        data-full-width-responsive={responsive}
+        {...(layout && { 'data-ad-layout': layout })}
+      />
+    </div>
+  );
 }

@@ -1,196 +1,115 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import NewsCard from '../components/NewsCard';
-import AdContainer from '../components/AdContainer'; // Import AdContainer
-import { Article } from '../types';
+import AdContainer from '../components/AdContainer';
+import ScrollToTop from '../components/ScrollToTop';
+import { Article } from '@/app/types';
 
-function SearchContent() {
+const AdSection = ({ children }: { children: React.ReactNode }) => (
+  <div className="max-w-7xl mx-auto bg-white shadow-sm mb-8">
+    <div className="p-2 border-b border-gray-100">
+      <p className="text-xs text-gray-500 text-center">Advertisement</p>
+    </div>
+    <div className="flex justify-center p-4 min-h-[250px] items-center">
+      {children}
+    </div>
+  </div>
+);
+
+export default function SearchResults() {
   const searchParams = useSearchParams();
-  const query = searchParams.get('q');
+  const query = searchParams.get('q') || '';
   const [articles, setArticles] = useState<Article[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    const searchArticles = async () => {
+      if (!query) {
+        setArticles([]);
+        setLoading(false);
+        return;
+      }
 
-  useEffect(() => {
-    const fetchSearchResults = async () => {
-      if (!query?.trim()) return;
-      
-      setLoading(true);
-      setError(null);
-      setArticles([]);
-      
       try {
-        const response = await fetch(`/api/news/search?q=${encodeURIComponent(query.trim())}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-
+        setLoading(true);
+        setError(null);
+        const response = await fetch(`/api/news/search?q=${encodeURIComponent(query)}`);
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.error || 'Failed to fetch search results');
+          throw new Error(data.error || 'Failed to search articles');
         }
 
-        if (!data.articles || !Array.isArray(data.articles)) {
-          throw new Error('Invalid response format');
-        }
-
-        setArticles(data.articles);
-      } catch (error) {
-        console.error('Error fetching search results:', error);
-        setError(error instanceof Error ? error.message : 'Failed to load search results. Please try again.');
+        setArticles(data.articles || []);
+      } catch (err) {
+        console.error('Error searching articles:', err);
+        setError(err instanceof Error ? err.message : 'Failed to search articles');
+        setArticles([]);
       } finally {
         setLoading(false);
       }
     };
 
-    if (mounted) {
-      fetchSearchResults();
-    }
-  }, [query, mounted]);
-
-  if (!mounted) {
-    return (
-      <div className="min-h-screen bg-gray-50 pt-24 pb-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/3 mb-8"></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {[...Array(6)].map((_, index) => (
-                <div key={`skeleton-${index}`} className="bg-white rounded-lg shadow-md overflow-hidden">
-                  <div className="h-48 bg-gray-200"></div>
-                  <div className="p-4">
-                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+    searchArticles();
+  }, [query]);
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-24 pb-10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">
-          {query?.trim() 
-            ? `Search Results for "${query}"` 
-            : 'Please enter a search query'}
+    <div className="min-h-screen bg-white">
+      <main className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-6">
+          {query ? `Search Results for "${query}"` : 'Search Results'}
         </h1>
 
-        {error && (
-          <div className="text-center py-6 bg-red-50 rounded-lg mb-8">
-            <p className="text-red-600">{error}</p>
-          </div>
-        )}
-
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[...Array(6)].map((_, index) => (
-              <div key={`skeleton-${index}`} className="bg-white rounded-lg shadow-md overflow-hidden animate-pulse">
-                <div className="h-48 bg-gray-200"></div>
-                <div className="p-4">
-                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                </div>
-              </div>
-            ))}
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+          </div>
+        ) : error ? (
+          <div className="text-center text-red-500 py-8">{error}</div>
+        ) : articles.length === 0 ? (
+          <div className="text-center text-gray-500 py-8">
+            {query ? 'No articles found for your search.' : 'Enter a search term to find articles.'}
           </div>
         ) : (
-          <>
-            {articles.length > 0 ? (
-              <div className="container mx-auto px-4 py-8">
-                <h1 className="text-3xl font-bold text-gray-900 mb-4">Search Results</h1>
-                
-                {/* Top ad */}
-                <AdContainer 
-                  slot="3456789012"
-                  format="auto"
-                  className="mb-8"
-                />
+          <div>
+            {/* Top Ad */}
+            <AdSection>
+              <AdContainer />
+            </AdSection>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {articles.map((article, index) => {
-                    const key = article.url || `search-result-${index}`;
-                    return (
-                      <div key={key}>
-                        <NewsCard article={article} />
-                        {/* Insert ad after every 6th article */}
-                        {(index + 1) % 6 === 0 && (
-                          <div className="col-span-full">
-                            <AdContainer 
-                              slot="7890123456"
-                              format="fluid"
-                              layout="in-article"
-                            />
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Bottom ad */}
-                <AdContainer 
-                  slot="2345678901"
-                  format="auto"
-                  className="mt-8"
-                />
-              </div>
-            ) : query?.trim() ? (
-              <div className="text-center py-12">
-                <h2 className="text-2xl font-semibold text-gray-700 mb-4">
-                  No results found for &ldquo;{query}&rdquo;
-                </h2>
-                <p className="text-gray-500">
-                  Try different keywords or check your spelling
-                </p>
-              </div>
-            ) : null}
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
-export default function SearchPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen bg-gray-50 pt-24 pb-10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="animate-pulse">
-              <div className="h-8 bg-gray-200 rounded w-1/3 mb-8"></div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {[...Array(6)].map((_, index) => (
-                  <div key={`skeleton-${index}`} className="bg-white rounded-lg shadow-md overflow-hidden">
-                    <div className="h-48 bg-gray-200"></div>
-                    <div className="p-4">
-                      <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                      <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                    </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {articles.map((article, index) => (
+                <>
+                  <div key={article.url}>
+                    <NewsCard article={article} />
                   </div>
-                ))}
-              </div>
+                  {(index + 1) % 6 === 0 && index !== articles.length - 1 && (
+                    <div className="col-span-full w-full">
+                      <div className="max-w-7xl mx-auto bg-white shadow-sm my-8">
+                        <div className="p-2 border-b border-gray-100">
+                          <p className="text-xs text-gray-500 text-center">Advertisement</p>
+                        </div>
+                        <div className="flex justify-center p-4 min-h-[250px] items-center">
+                          <AdContainer />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ))}
             </div>
+
+            {/* Bottom Ad */}
+            <AdSection>
+              <AdContainer />
+            </AdSection>
           </div>
-        </div>
-      }
-    >
-      <SearchContent />
-    </Suspense>
+        )}
+      </main>
+      <ScrollToTop />
+    </div>
   );
 }

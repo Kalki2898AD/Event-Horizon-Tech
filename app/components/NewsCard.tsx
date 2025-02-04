@@ -39,7 +39,12 @@ export default function NewsCard({ article, showSaveButton = true }: NewsCardPro
     if ((e.target as HTMLElement).closest('button')) {
       return;
     }
-    router.push(`/article?url=${encodeURIComponent(article.url)}`);
+    const params = new URLSearchParams({
+      url: article.url,
+      urlToImage: article.urlToImage || '',
+      title: article.title
+    });
+    router.push(`/article?${params.toString()}`);
   };
 
   const handleSave = async (e: React.MouseEvent) => {
@@ -85,18 +90,28 @@ export default function NewsCard({ article, showSaveButton = true }: NewsCardPro
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             className="object-cover"
+            onError={(e: any) => {
+              e.target.src = '/placeholder-news.jpg';
+            }}
             priority={true}
           />
         </div>
       )}
       <div className="p-4">
         <h2 className="text-xl font-semibold mb-2 text-gray-800 dark:text-white line-clamp-2 pointer-events-none">
-          <Link href={`/article?url=${encodeURIComponent(article.url)}`} className="hover:text-blue-600 dark:hover:text-blue-400">
+          <Link 
+            href={`/article?${new URLSearchParams({
+              url: article.url,
+              urlToImage: article.urlToImage || '',
+              title: article.title
+            }).toString()}`} 
+            className="hover:text-blue-600 dark:hover:text-blue-400"
+          >
             {article.title}
           </Link>
         </h2>
         <p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-3 text-sm pointer-events-none">
-          {article.description}
+          {article.description || 'No description available'}
         </p>
         <div className="flex justify-between items-center text-sm text-gray-500 dark:text-gray-400 pointer-events-none">
           <span>{formatDistanceToNow(new Date(article.publishedAt), { addSuffix: true })}</span>

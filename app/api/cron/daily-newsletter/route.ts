@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
+import { createHash } from 'crypto';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -46,12 +47,19 @@ async function shouldSendNewsletter(frequency: string): Promise<boolean> {
   }
 }
 
+function generateUnsubscribeUrl(email: string): string {
+  const token = createHash('sha256').update(email).digest('hex');
+  return `${process.env.NEXT_PUBLIC_APP_URL}/api/newsletter/unsubscribe?email=${encodeURIComponent(email)}&token=${token}`;
+}
+
 async function sendNewsletter(email: string, articles: NewsArticle[], frequency: string) {
   const frequencyText = {
     daily: 'Daily',
     weekly: 'Weekly',
     monthly: 'Monthly'
   }[frequency];
+
+  const unsubscribeUrl = generateUnsubscribeUrl(email);
 
   const articlesList = articles
     .map(
@@ -103,6 +111,9 @@ async function sendNewsletter(email: string, articles: NewsArticle[], frequency:
           <p>Have questions or feedback? Just reply to this email!</p>
           <p style="margin-top: 20px;">
             You're receiving this because you subscribed to ${frequencyText} updates from Event Horizon Tech.
+          </p>
+          <p style="margin-top: 20px;">
+            <a href="${unsubscribeUrl}" style="color: #0070f3; text-decoration: none;">Unsubscribe</a>
           </p>
         </div>
       </div>

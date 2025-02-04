@@ -7,7 +7,7 @@ export async function GET() {
   try {
     const { data, error } = await resend.emails.send({
       from: 'Event Horizon Tech <newsletter@eventhorizonlive.space>',
-      to: ['rishikeshvarma9854@gmail.com'],
+      to: ['budgetbuddy567@gmail.com'],
       subject: 'Welcome to Event Horizon Tech! 🚀',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
