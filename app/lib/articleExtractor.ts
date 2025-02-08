@@ -1,5 +1,4 @@
 import { load } from 'cheerio';
-import type { AnyNode } from 'cheerio';
 
 interface ExtractedArticle {
   title: string;
