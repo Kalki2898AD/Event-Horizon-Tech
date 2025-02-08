@@ -1,20 +1,11 @@
 export interface Article {
-  id: string;
-  url: string;
   title: string;
   description: string;
-  content: string;
-  author: string;
+  url: string;
+  urlToImage?: string;
   publishedAt: string;
-  source: {
-    id?: string;
-    name: string;
-  };
-  urlToImage: string;
-  byline: string;
-  siteName: string;
-  created_at: string;
-  user_email: string;
+  source?: string;
+  content?: string;
 }
 
 export interface NewsletterSubscriber {
@@ -33,10 +24,7 @@ export interface ReadabilityArticle {
   textContent: string;
   length: number;
   excerpt: string;
-  byline: string;
-  dir: string;
-  siteName?: string;
-  urlToImage?: string;
+  siteName: string;
 }
 
 export interface NewsAPIResponse {

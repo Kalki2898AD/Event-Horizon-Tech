@@ -1,48 +1,35 @@
-'use client';
-
 import { useState } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Share2, BookmarkPlus, ExternalLink } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { createClient } from '@supabase/supabase-js';
-
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-interface Article {
-  id: string;
-  title: string;
-  description: string;
-  url: string;
-  urlToImage: string;
-  publishedAt: string;
-  source: {
-    name: string;
-  };
-}
+import Image from 'next/image';
+import type { Article } from '@/types';
+import { useRouter } from 'next/navigation';
 
 interface NewsCardProps {
   article: Article;
-  showSaveButton?: boolean;
+  onShare?: (article: Article) => void;
+  onSave?: (article: Article) => void;
+  onRead?: (article: Article) => void;
 }
 
-export default function NewsCard({ article, showSaveButton = true }: NewsCardProps) {
-  const router = useRouter();
+export function NewsCard({ article, onShare, onSave, onRead }: NewsCardProps) {
+  const [isImageError, setIsImageError] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
     // Don't navigate if clicking the save button
     if ((e.target as HTMLElement).closest('button')) {
       return;
     }
+
     const params = new URLSearchParams({
       url: article.url,
-      urlToImage: article.urlToImage || '',
-      title: article.title
+      urlToImage: article.urlToImage || ''
     });
     router.push(`/article?${params.toString()}`);
   };
@@ -51,25 +38,22 @@ export default function NewsCard({ article, showSaveButton = true }: NewsCardPro
     e.stopPropagation(); // Prevent card click when clicking save button
     
     if (isLoading) return;
-    
     setIsLoading(true);
+
     try {
-      if (!isSaved) {
-        const { error } = await supabase
-          .from('saved_articles')
-          .insert([{ article_id: article.id }]);
-        
-        if (error) throw error;
-        setIsSaved(true);
-      } else {
-        const { error } = await supabase
-          .from('saved_articles')
-          .delete()
-          .eq('article_id', article.id);
-        
-        if (error) throw error;
-        setIsSaved(false);
+      const response = await fetch('/api/articles/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(article)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save article');
       }
+
+      setIsSaved(true);
     } catch (error) {
       console.error('Error saving article:', error);
     } finally {
@@ -77,59 +61,74 @@ export default function NewsCard({ article, showSaveButton = true }: NewsCardPro
     }
   };
 
+  const formattedDate = article.publishedAt
+    ? formatDistanceToNow(new Date(article.publishedAt), { addSuffix: true })
+    : '';
+
   return (
-    <div 
-      onClick={handleCardClick}
-      className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden cursor-pointer transform transition-transform duration-200 hover:scale-[1.02]"
-    >
-      {article.urlToImage && (
-        <div className="relative w-full h-48">
-          <Image
-            src={article.urlToImage}
-            alt={article.title}
-            fill
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            className="object-cover"
-            onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-              e.target.src = '/placeholder-news.jpg';
-            }}
-            priority={true}
-          />
+    <Card className="w-full h-full flex flex-col hover:shadow-lg transition-shadow duration-200" onClick={handleCardClick}>
+      <CardHeader className="flex-none">
+        <div className="flex justify-between items-start">
+          <div className="flex-1">
+            <CardTitle className="text-xl font-bold mb-2 line-clamp-2">
+              {article.title}
+            </CardTitle>
+            <CardDescription className="text-sm text-gray-500">
+              {article.source && (
+                <Badge variant="secondary" className="mr-2">
+                  {article.source.name}
+                </Badge>
+              )}
+              {formattedDate}
+            </CardDescription>
+          </div>
         </div>
-      )}
-      <div className="p-4">
-        <h2 className="text-xl font-semibold mb-2 text-gray-800 dark:text-white line-clamp-2 pointer-events-none">
-          <Link 
-            href={`/article?${new URLSearchParams({
-              url: article.url,
-              urlToImage: article.urlToImage || '',
-              title: article.title
-            }).toString()}`} 
-            className="hover:text-blue-600 dark:hover:text-blue-400"
+      </CardHeader>
+
+      <CardContent className="flex-1">
+        {article.urlToImage && !isImageError && (
+          <div className="relative w-full h-48 mb-4">
+            <Image
+              src={article.urlToImage}
+              alt={article.title}
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className="object-cover rounded-md"
+              onError={() => setIsImageError(true)}
+              priority
+            />
+          </div>
+        )}
+        <p className="text-gray-600 line-clamp-3">{article.description}</p>
+      </CardContent>
+
+      <CardFooter className="flex-none">
+        <div className="flex justify-between w-full">
+          <Button variant="outline" size="sm" onClick={(e) => {
+            e.stopPropagation();
+            onShare?.(article);
+          }}>
+            <Share2 className="h-4 w-4 mr-2" />
+            Share
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleSave}
+            disabled={isLoading || isSaved}
           >
-            {article.title}
-          </Link>
-        </h2>
-        <p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-3 text-sm pointer-events-none">
-          {article.description || 'No description available'}
-        </p>
-        <div className="flex justify-between items-center text-sm text-gray-500 dark:text-gray-400 pointer-events-none">
-          <span>{formatDistanceToNow(new Date(article.publishedAt), { addSuffix: true })}</span>
-          {showSaveButton && (
-            <button
-              onClick={handleSave}
-              disabled={isLoading}
-              className={`px-3 py-1 rounded ${
-                isSaved
-                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
-                  : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
-              }`}
-            >
-              {isSaved ? 'Saved' : 'Save'}
-            </button>
-          )}
+            <BookmarkPlus className="h-4 w-4 mr-2" />
+            {isSaved ? 'Saved' : isLoading ? 'Saving...' : 'Save'}
+          </Button>
+          <Button variant="default" size="sm" onClick={(e) => {
+            e.stopPropagation();
+            onRead?.(article);
+          }}>
+            <ExternalLink className="h-4 w-4 mr-2" />
+            Read
+          </Button>
         </div>
-      </div>
-    </div>
+      </CardFooter>
+    </Card>
   );
 }
