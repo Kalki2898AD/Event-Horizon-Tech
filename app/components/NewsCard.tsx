@@ -61,7 +61,7 @@ export default function NewsCard({ article }: NewsCardProps) {
       try {
         await navigator.share({
           title: article.title,
-          text: article.description,
+          text: article.description || undefined,
           url: article.url
         });
       } catch (error) {
