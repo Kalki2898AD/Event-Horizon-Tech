@@ -1,5 +1,5 @@
 import { load } from 'cheerio';
-import type { CheerioAPI, Node as CheerioNode } from 'cheerio';
+import type { CheerioAPI, Element as CheerioElement } from 'cheerio';
 
 interface ExtractedArticle {
   title: string;
@@ -35,7 +35,7 @@ export async function extractArticle(
   
   // Process content nodes
   let processedContent = '';
-  mainContent.children().each((_: number, child: CheerioNode) => {
+  mainContent.children().each((_: number, child: CheerioElement) => {
     if (child.type === 'tag') {
       const $node = $(child);
       const tagName = child.tagName?.toLowerCase();
@@ -117,7 +117,7 @@ function findMainContent($: CheerioAPI) {
   let maxTextLength = 0;
   let mainElement = $('body');
 
-  $('div, section').each((_: number, element: CheerioNode) => {
+  $('div, section').each((_: number, element: CheerioElement) => {
     const $element = $(element);
     const textLength = $element.text().trim().length;
 
