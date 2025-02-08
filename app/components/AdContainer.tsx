@@ -2,13 +2,15 @@
 
 import { useEffect } from 'react';
 
-// Define the type for the adsbygoogle array
-type AdsbyGoogle = Array<{ push: (arg: object) => void }>;
+// Define the AdPushCommand type
+interface AdPushCommand {
+  push: (params: { [key: string]: unknown }) => void;
+}
 
 // Augment the Window interface
 declare global {
   interface Window {
-    adsbygoogle: AdsbyGoogle | undefined;
+    adsbygoogle: AdPushCommand[] | undefined;
   }
 }
 
@@ -23,7 +25,10 @@ export default function AdContainer({ slot, format = 'auto', responsive = true, 
   useEffect(() => {
     try {
       if (window.adsbygoogle) {
-        window.adsbygoogle.push({});
+        window.adsbygoogle.push({
+          google_ad_client: "ca-pub-9131964371118756",
+          enable_page_level_ads: true
+        });
       }
     } catch (error) {
       console.error('Error loading ad:', error);
