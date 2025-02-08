@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import Image from 'next/image';
 import type { Article } from '@/types';
@@ -5,12 +7,9 @@ import { useRouter } from 'next/navigation';
 
 interface NewsCardProps {
   article: Article;
-  onShare?: (article: Article) => void;
-  onSave?: (article: Article) => void;
-  onRead?: (article: Article) => void;
 }
 
-export function NewsCard({ article, onShare, onSave, onRead }: NewsCardProps) {
+export default function NewsCard({ article }: NewsCardProps) {
   const [isImageError, setIsImageError] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -54,6 +53,29 @@ export function NewsCard({ article, onShare, onSave, onRead }: NewsCardProps) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleShare = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: article.title,
+          text: article.description,
+          url: article.url
+        });
+      } catch (error) {
+        console.error('Error sharing:', error);
+      }
+    } else {
+      // Fallback - copy to clipboard
+      navigator.clipboard.writeText(article.url);
+    }
+  };
+
+  const handleRead = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    window.open(article.url, '_blank');
   };
 
   const formattedDate = article.publishedAt
@@ -104,10 +126,7 @@ export function NewsCard({ article, onShare, onSave, onRead }: NewsCardProps) {
         <div className="flex justify-between w-full">
           <button
             className="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium bg-transparent border border-gray-200 hover:bg-gray-50"
-            onClick={(e) => {
-              e.stopPropagation();
-              onShare?.(article);
-            }}
+            onClick={handleShare}
           >
             Share
           </button>
@@ -120,10 +139,7 @@ export function NewsCard({ article, onShare, onSave, onRead }: NewsCardProps) {
           </button>
           <button
             className="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700"
-            onClick={(e) => {
-              e.stopPropagation();
-              onRead?.(article);
-            }}
+            onClick={handleRead}
           >
             Read
           </button>
