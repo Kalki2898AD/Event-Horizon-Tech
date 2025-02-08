@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createHash } from 'crypto';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../../../../lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
