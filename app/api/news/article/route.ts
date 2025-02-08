@@ -1,84 +1,81 @@
-import { NextResponse } from 'next/server';
-import axios from 'axios';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import { JSDOM } from 'jsdom';
+import { NextRequest, NextResponse } from 'next/server';
 import { Readability } from '@mozilla/readability';
-import { ReadabilityArticle } from '@/types';
+import { JSDOM } from 'jsdom';
+import { createClient } from '@supabase/supabase-js';
+import type { ReadabilityArticle } from '@/types';
 
-export async function GET(request: Request) {
+// Initialize Supabase client
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const url = searchParams.get('url');
+    const searchParams = request.nextUrl.searchParams;
+    const articleUrl = searchParams.get('url');
+    const urlToImage = searchParams.get('urlToImage');
 
-    if (!url) {
+    if (!articleUrl) {
       return NextResponse.json(
-        { error: 'URL parameter is required' },
+        { error: 'Article URL is required' },
         { status: 400 }
       );
     }
 
-    // First, check if we have the article cached in Supabase
-    const { data: cachedArticle } = await supabaseAdmin
+    // Check if article exists in database
+    const { data: existingArticle, error: fetchError } = await supabase
       .from('articles')
       .select('*')
-      .eq('url', url)
+      .eq('url', articleUrl)
       .single();
 
-    if (cachedArticle) {
-      return NextResponse.json({ article: cachedArticle });
+    if (existingArticle) {
+      return NextResponse.json(existingArticle);
     }
 
-    // If not cached, fetch and parse the article
-    const response = await axios.get(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      }
-    });
-    const dom = new JSDOM(response.data, { url });
+    // Fetch article content
+    const response = await fetch(articleUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch article: ${response.statusText}`);
+    }
+
+    const html = await response.text();
+    const dom = new JSDOM(html);
     const reader = new Readability(dom.window.document);
-    const article = reader.parse() as ReadabilityArticle | null;
+    const article = reader.parse();
 
     if (!article) {
-      return NextResponse.json(
-        { error: 'Failed to parse article content' },
-        { status: 400 }
-      );
+      throw new Error('Failed to parse article content');
     }
 
-    // Get the og:image or first image from the article
-    const ogImage = dom.window.document.querySelector('meta[property="og:image"]')?.getAttribute('content');
-    const firstImage = dom.window.document.querySelector('img')?.getAttribute('src');
-    const imageUrl = ogImage || firstImage;
-
-    // Get the site name
+    // Extract site name from meta tags or URL
     const siteName = dom.window.document.querySelector('meta[property="og:site_name"]')?.getAttribute('content') ||
-      new URL(url).hostname.replace('www.', '');
+      new URL(articleUrl).hostname.replace(/^www\./, '');
 
-    const articleData = {
-      id: url,
-      url,
+    // Create article object with parsed content
+    const parsedArticle: ReadabilityArticle = {
       title: article.title,
       content: article.content,
       textContent: article.textContent,
       excerpt: article.excerpt,
-      byline: article.byline,
-      dir: article.dir,
       length: article.length,
-      siteName,
-      urlToImage: imageUrl,
-      created_at: new Date().toISOString(),
+      siteName
     };
 
-    // Cache the article in Supabase
-    const { error: insertError } = await supabaseAdmin
+    // Store article in database
+    const { error: insertError } = await supabase
       .from('articles')
-      .upsert([articleData]);
+      .insert([{
+        url: articleUrl,
+        urlToImage,
+        ...parsedArticle
+      }]);
 
     if (insertError) {
-      console.error('Error caching article:', insertError);
+      console.error('Error storing article:', insertError);
     }
 
-    return NextResponse.json({ article: articleData });
+    return NextResponse.json(parsedArticle);
   } catch (error) {
     console.error('Error processing article:', error);
     return NextResponse.json(
