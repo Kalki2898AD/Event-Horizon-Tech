@@ -12,8 +12,7 @@ interface ExtractedArticle {
 
 export async function extractArticle(
   html: string,
-  url: string,
-  urlToImage?: string | null
+  url: string
 ): Promise<ExtractedArticle> {
   const $ = load(html);
   
@@ -32,20 +31,69 @@ export async function extractArticle(
     new URL(url).hostname.replace('www.', '');
 
   // Get the main content
-  const mainContent = $('article').first();
-  const content = mainContent.length
-    ? mainContent
-    : $('main').first().length
-    ? $('main').first()
-    : findMainContent($);
+  const mainContent = findMainContent($);
+  
+  // Process content nodes
+  let processedContent = '';
+  mainContent.children().each((_, child) => {
+    if (child.type === 'tag') {
+      const $node = $(child);
+      const tagName = child.tagName?.toLowerCase();
+
+      // Skip empty nodes and unwanted elements
+      if (!$node.text().trim() && !['img'].includes(tagName)) {
+        return;
+      }
+
+      // Process specific tags
+      switch (tagName) {
+        case 'p':
+          processedContent += `<p>${$node.html()}</p>`;
+          break;
+        case 'h1':
+        case 'h2':
+        case 'h3':
+        case 'h4':
+        case 'h5':
+        case 'h6':
+          processedContent += `<${tagName}>${$node.text()}</${tagName}>`;
+          break;
+        case 'img':
+          const src = $node.attr('src');
+          const alt = $node.attr('alt') || '';
+          if (src) {
+            processedContent += `<figure><img src="${src}" alt="${alt}" loading="lazy" />${
+              alt ? `<figcaption>${alt}</figcaption>` : ''
+            }</figure>`;
+          }
+          break;
+        case 'pre':
+        case 'code':
+          processedContent += `<${tagName}>${$node.html()}</${tagName}>`;
+          break;
+        case 'blockquote':
+          processedContent += `<blockquote>${$node.html()}</blockquote>`;
+          break;
+        case 'ul':
+        case 'ol':
+          processedContent += `<${tagName}>${$node.html()}</${tagName}>`;
+          break;
+        default:
+          const html = $node.html();
+          if (html) {
+            processedContent += html;
+          }
+      }
+    }
+  });
 
   // Get text content and excerpt
-  const textContent = content.text().trim();
+  const textContent = mainContent.text().trim();
   const excerpt = textContent.slice(0, 200) + '...';
 
   return {
     title,
-    content: content.html() || '',
+    content: processedContent || mainContent.html() || '',
     textContent,
     excerpt,
     length: textContent.length,
@@ -54,6 +102,17 @@ export async function extractArticle(
 }
 
 function findMainContent($: cheerio.CheerioAPI) {
+  // Try to find article or main content first
+  const article = $('article').first();
+  if (article.length) {
+    return article;
+  }
+
+  const main = $('main').first();
+  if (main.length) {
+    return main;
+  }
+
   // Find the element with the most text content
   let maxTextLength = 0;
   let mainElement = $('body');
@@ -69,46 +128,4 @@ function findMainContent($: cheerio.CheerioAPI) {
   });
 
   return mainElement;
-}
-
-function processNode(node: AnyNode) {
-  const $node = $(node);
-  const tagName = node.tagName?.toLowerCase();
-
-  // Skip empty nodes and unwanted elements
-  if (!$node.text().trim() && !['img'].includes(tagName)) {
-    return '';
-  }
-
-  // Process specific tags
-  switch (tagName) {
-    case 'p':
-      return `<p>${$node.html()}</p>`;
-    case 'h1':
-    case 'h2':
-    case 'h3':
-    case 'h4':
-    case 'h5':
-    case 'h6':
-      return `<${tagName}>${$node.text()}</${tagName}>`;
-    case 'img':
-      const src = $node.attr('src');
-      const alt = $node.attr('alt') || '';
-      if (src) {
-        return `<figure><img src="${src}" alt="${alt}" loading="lazy" />${
-          alt ? `<figcaption>${alt}</figcaption>` : ''
-        }</figure>`;
-      }
-      return '';
-    case 'pre':
-    case 'code':
-      return `<${tagName}>${$node.html()}</${tagName}>`;
-    case 'blockquote':
-      return `<blockquote>${$node.html()}</blockquote>`;
-    case 'ul':
-    case 'ol':
-      return `<${tagName}>${$node.html()}</${tagName}>`;
-    default:
-      return $node.html() || '';
-  }
 }
