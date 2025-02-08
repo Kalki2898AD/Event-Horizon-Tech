@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Readability } from '@mozilla/readability';
-import { JSDOM } from 'jsdom';
 import { createClient } from '@supabase/supabase-js';
-import type { ReadabilityArticle } from '@/types';
+import { extractArticle } from '@/lib/articleExtractor';
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -40,27 +38,7 @@ export async function GET(request: NextRequest) {
     }
 
     const html = await response.text();
-    const dom = new JSDOM(html);
-    const reader = new Readability(dom.window.document);
-    const article = reader.parse();
-
-    if (!article) {
-      throw new Error('Failed to parse article content');
-    }
-
-    // Extract site name from meta tags or URL
-    const siteName = dom.window.document.querySelector('meta[property="og:site_name"]')?.getAttribute('content') ||
-      new URL(articleUrl).hostname.replace(/^www\./, '');
-
-    // Create article object with parsed content
-    const parsedArticle: ReadabilityArticle = {
-      title: article.title,
-      content: article.content,
-      textContent: article.textContent,
-      excerpt: article.excerpt,
-      length: article.length,
-      siteName
-    };
+    const article = await extractArticle(html, articleUrl);
 
     // Store article in database
     const { error: insertError } = await supabase
@@ -68,14 +46,14 @@ export async function GET(request: NextRequest) {
       .insert([{
         url: articleUrl,
         urlToImage,
-        ...parsedArticle
+        ...article
       }]);
 
     if (insertError) {
       console.error('Error storing article:', insertError);
     }
 
-    return NextResponse.json(parsedArticle);
+    return NextResponse.json(article);
   } catch (error) {
     console.error('Error processing article:', error);
     return NextResponse.json(
