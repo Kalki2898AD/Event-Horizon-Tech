@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
-import { supabaseAdmin } from '@/app/lib/supabaseAdmin';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { JSDOM } from 'jsdom';
 import { Readability } from '@mozilla/readability';
-import { ReadabilityArticle } from '@/app/types';
+import { ReadabilityArticle } from '@/types';
 
 export async function GET(request: Request) {
   try {

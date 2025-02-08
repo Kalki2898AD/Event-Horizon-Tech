@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
-import { fetchTechNews, searchNews } from '@/app/lib/newsApi';
-import { getSupabaseClient } from '@/app/lib/supabase';
-import type { Article } from '@/app/types';
+import { NextRequest, NextResponse } from 'next/server';
+import { fetchNews } from '@/lib/newsApi';
+import { supabase } from '@/lib/supabase';
+import type { Article } from '@/types';
 
 const NEWS_API_KEY = process.env.NEWS_API_KEY;
 
@@ -15,10 +15,10 @@ export async function GET(request: Request) {
     let articles: Article[] = [];
     if (query) {
       console.log('Searching news with query:', query);
-      articles = await searchNews(query);
+      articles = await fetchNews(query);
     } else {
       console.log('Fetching tech news...');
-      articles = await fetchTechNews();
+      articles = await fetchNews();
     }
 
     // Final fallback to static data if NewsAPI fails
@@ -45,8 +45,7 @@ export async function GET(request: Request) {
     // Store articles in Supabase for caching
     if (articles.length > 0) {
       console.log('Storing articles in Supabase...');
-      const supabaseClient = getSupabaseClient();
-      const { error } = await supabaseClient
+      const { error } = await supabase
         .from('articles')
         .upsert(
           articles.map((article: Article) => ({
