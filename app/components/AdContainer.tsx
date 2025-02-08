@@ -2,9 +2,13 @@
 
 import { useEffect } from 'react';
 
+// Define the type for the adsbygoogle array
+type AdsbyGoogle = Array<{ push: (arg: object) => void }>;
+
+// Augment the Window interface
 declare global {
   interface Window {
-    adsbygoogle?: { push: (arg: object) => void }[];
+    adsbygoogle: AdsbyGoogle | undefined;
   }
 }
 
