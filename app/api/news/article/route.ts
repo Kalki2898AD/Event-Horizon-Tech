@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import axios from 'axios';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { JSDOM } from 'jsdom';

@@ -23,7 +23,10 @@ export default function TermsOfService() {
             <h2 className="text-2xl font-semibold mt-8 mb-4">5. Advertising</h2>
             <p>We display advertisements provided by Google AdSense. These ads are clearly marked as advertisements and are subject to Google's advertising policies.</p>
 
-            <h2 className="text-2xl font-semibold mt-8 mb-4">6. Contact Information</h2>
+            <h2 className="text-2xl font-semibold mt-8 mb-4">6. Indemnification</h2>
+            <p>You agree to indemnify and hold harmless Event Horizon Tech and its affiliates, officers, employees, agents, and licensors from any claims, damages, expenses, or costs arising from your use of the service.</p>
+
+            <h2 className="text-2xl font-semibold mt-8 mb-4">7. Contact Information</h2>
             <p>For any questions regarding these terms, please contact us at:</p>
             <p className="mt-2">Email: budgetbuddy567@gmail.com</p>
           </div>

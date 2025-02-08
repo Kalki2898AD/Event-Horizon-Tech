@@ -34,7 +34,7 @@ export default function NewsCard({ article, showSaveButton = true }: NewsCardPro
   const [isSaved, setIsSaved] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleCardClick = (e: React.MouseEvent) => {
+  const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
     // Don't navigate if clicking the save button
     if ((e.target as HTMLElement).closest('button')) {
       return;
@@ -47,7 +47,7 @@ export default function NewsCard({ article, showSaveButton = true }: NewsCardPro
     router.push(`/article?${params.toString()}`);
   };
 
-  const handleSave = async (e: React.MouseEvent) => {
+  const handleSave = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation(); // Prevent card click when clicking save button
     
     if (isLoading) return;
@@ -90,7 +90,7 @@ export default function NewsCard({ article, showSaveButton = true }: NewsCardPro
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             className="object-cover"
-            onError={(e: any) => {
+            onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
               e.target.src = '/placeholder-news.jpg';
             }}
             priority={true}
