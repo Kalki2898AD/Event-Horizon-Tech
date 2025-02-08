@@ -1,5 +1,5 @@
 import { load } from 'cheerio';
-import type { CheerioAPI, Cheerio, AnyNode } from 'cheerio';
+import type { CheerioAPI } from 'cheerio';
 
 interface ExtractedArticle {
   title: string;
@@ -32,68 +32,13 @@ export async function extractArticle(
 
   // Get the main content
   const mainContent = findMainContent($);
-  
-  // Process content nodes
-  let processedContent = '';
-  mainContent.children().each((_, child) => {
-    if ('tagName' in child) {
-      const $node = $(child);
-      const tagName = child.tagName?.toLowerCase();
-
-      // Skip empty nodes and unwanted elements
-      if (!$node.text().trim() && !['img'].includes(tagName)) {
-        return;
-      }
-
-      // Process specific tags
-      switch (tagName) {
-        case 'p':
-          processedContent += `<p>${$node.html()}</p>`;
-          break;
-        case 'h1':
-        case 'h2':
-        case 'h3':
-        case 'h4':
-        case 'h5':
-        case 'h6':
-          processedContent += `<${tagName}>${$node.text()}</${tagName}>`;
-          break;
-        case 'img':
-          const src = $node.attr('src');
-          const alt = $node.attr('alt') || '';
-          if (src) {
-            processedContent += `<figure><img src="${src}" alt="${alt}" loading="lazy" />${
-              alt ? `<figcaption>${alt}</figcaption>` : ''
-            }</figure>`;
-          }
-          break;
-        case 'pre':
-        case 'code':
-          processedContent += `<${tagName}>${$node.html()}</${tagName}>`;
-          break;
-        case 'blockquote':
-          processedContent += `<blockquote>${$node.html()}</blockquote>`;
-          break;
-        case 'ul':
-        case 'ol':
-          processedContent += `<${tagName}>${$node.html()}</${tagName}>`;
-          break;
-        default:
-          const html = $node.html();
-          if (html) {
-            processedContent += html;
-          }
-      }
-    }
-  });
-
-  // Get text content and excerpt
+  const content = mainContent.html() || '';
   const textContent = mainContent.text().trim();
   const excerpt = textContent.slice(0, 200) + '...';
 
   return {
     title,
-    content: processedContent || mainContent.html() || '',
+    content,
     textContent,
     excerpt,
     length: textContent.length,
@@ -101,7 +46,7 @@ export async function extractArticle(
   };
 }
 
-function findMainContent($: CheerioAPI): Cheerio<AnyNode> {
+function findMainContent($: CheerioAPI) {
   // Try to find article or main content first
   const article = $('article').first();
   if (article.length) {
