@@ -2,15 +2,9 @@
 
 import { useEffect } from 'react';
 
-// Define the AdPushCommand type
-interface AdPushCommand {
-  push: (params: { [key: string]: unknown }) => void;
-}
-
-// Augment the Window interface
 declare global {
   interface Window {
-    adsbygoogle: AdPushCommand[] | undefined;
+    adsbygoogle: unknown[];
   }
 }
 
@@ -24,12 +18,7 @@ interface AdContainerProps {
 export default function AdContainer({ slot, format = 'auto', responsive = true, style }: AdContainerProps) {
   useEffect(() => {
     try {
-      if (window.adsbygoogle) {
-        window.adsbygoogle.push({
-          google_ad_client: "ca-pub-9131964371118756",
-          enable_page_level_ads: true
-        });
-      }
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
     } catch (error) {
       console.error('Error loading ad:', error);
     }
