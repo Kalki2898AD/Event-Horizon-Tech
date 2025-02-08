@@ -76,7 +76,7 @@ export function NewsCard({ article, onShare, onSave, onRead }: NewsCardProps) {
             <CardDescription className="text-sm text-gray-500">
               {article.source && (
                 <Badge variant="secondary" className="mr-2">
-                  {article.source.name}
+                  {article.source}
                 </Badge>
               )}
               {formattedDate}
