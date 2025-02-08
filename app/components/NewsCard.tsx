@@ -1,9 +1,4 @@
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Share2, BookmarkPlus, ExternalLink } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
 import Image from 'next/image';
 import type { Article } from '@/types';
 import { useRouter } from 'next/navigation';
@@ -62,30 +57,33 @@ export function NewsCard({ article, onShare, onSave, onRead }: NewsCardProps) {
   };
 
   const formattedDate = article.publishedAt
-    ? formatDistanceToNow(new Date(article.publishedAt), { addSuffix: true })
+    ? new Date(article.publishedAt).toLocaleDateString()
     : '';
 
   return (
-    <Card className="w-full h-full flex flex-col hover:shadow-lg transition-shadow duration-200" onClick={handleCardClick}>
-      <CardHeader className="flex-none">
+    <div 
+      className="w-full h-full flex flex-col rounded-lg border bg-white shadow-sm hover:shadow-lg transition-shadow duration-200 cursor-pointer" 
+      onClick={handleCardClick}
+    >
+      <div className="p-6">
         <div className="flex justify-between items-start">
           <div className="flex-1">
-            <CardTitle className="text-xl font-bold mb-2 line-clamp-2">
+            <h3 className="text-xl font-bold mb-2 line-clamp-2">
               {article.title}
-            </CardTitle>
-            <CardDescription className="text-sm text-gray-500">
+            </h3>
+            <p className="text-sm text-gray-500">
               {article.source && (
-                <Badge variant="secondary" className="mr-2">
+                <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold mr-2">
                   {article.source}
-                </Badge>
+                </span>
               )}
               {formattedDate}
-            </CardDescription>
+            </p>
           </div>
         </div>
-      </CardHeader>
+      </div>
 
-      <CardContent className="flex-1">
+      <div className="p-6 pt-0 flex-1">
         {article.urlToImage && !isImageError && (
           <div className="relative w-full h-48 mb-4">
             <Image
@@ -100,35 +98,37 @@ export function NewsCard({ article, onShare, onSave, onRead }: NewsCardProps) {
           </div>
         )}
         <p className="text-gray-600 line-clamp-3">{article.description}</p>
-      </CardContent>
+      </div>
 
-      <CardFooter className="flex-none">
+      <div className="flex items-center p-6 pt-0">
         <div className="flex justify-between w-full">
-          <Button variant="outline" size="sm" onClick={(e) => {
-            e.stopPropagation();
-            onShare?.(article);
-          }}>
-            <Share2 className="h-4 w-4 mr-2" />
+          <button
+            className="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium bg-transparent border border-gray-200 hover:bg-gray-50"
+            onClick={(e) => {
+              e.stopPropagation();
+              onShare?.(article);
+            }}
+          >
             Share
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
+          </button>
+          <button
+            className="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium bg-transparent border border-gray-200 hover:bg-gray-50"
             onClick={handleSave}
             disabled={isLoading || isSaved}
           >
-            <BookmarkPlus className="h-4 w-4 mr-2" />
             {isSaved ? 'Saved' : isLoading ? 'Saving...' : 'Save'}
-          </Button>
-          <Button variant="default" size="sm" onClick={(e) => {
-            e.stopPropagation();
-            onRead?.(article);
-          }}>
-            <ExternalLink className="h-4 w-4 mr-2" />
+          </button>
+          <button
+            className="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRead?.(article);
+            }}
+          >
             Read
-          </Button>
+          </button>
         </div>
-      </CardFooter>
-    </Card>
+      </div>
+    </div>
   );
 }
