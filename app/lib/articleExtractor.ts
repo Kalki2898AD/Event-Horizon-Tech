@@ -75,7 +75,6 @@ export async function extractArticleContent(
 
   const contentBlocks: ContentBlock[] = [];
   const images: Array<{url: string; position: number; caption?: string}> = [];
-  let imageCounter = 0;
 
   // Add the news card image if provided
   if (urlToImage) {
@@ -91,7 +90,6 @@ export async function extractArticleContent(
       imageUrl: urlToImage,
       imageCaption: 'Featured Image'
     });
-    imageCounter++;
   }
 
   function processNode(node: cheerio.Element) {
@@ -181,7 +179,6 @@ export async function extractArticleContent(
                 imageUrl,
                 imageCaption: caption
               });
-              imageCounter++;
             }
           } catch (error) {
             console.error('Error processing image URL:', error);

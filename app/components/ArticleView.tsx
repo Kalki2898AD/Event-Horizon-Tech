@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import AdContainer from './AdContainer';
 import ScrollToTop from './ScrollToTop';
+import Image from 'next/image';
 
 interface ArticleViewProps {
   url: string;
@@ -111,14 +112,11 @@ export default function ArticleView({ url, onError }: ArticleViewProps) {
           {/* Featured Image */}
           {urlToImage && (
             <div className="relative mb-8">
-              <img
+              <Image
                 src={urlToImage}
                 alt={article.title}
-                className="w-full max-h-[500px] object-contain rounded-lg"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
-                }}
+                fill
+                className="object-contain rounded-lg"
               />
             </div>
           )}
@@ -129,7 +127,7 @@ export default function ArticleView({ url, onError }: ArticleViewProps) {
             dangerouslySetInnerHTML={{ 
               __html: article.content.replace(
                 /<img([^>]*)>/g,
-                '<img$1 style="max-width:100%; height:auto; margin:1rem auto; display:block;">'
+                (match, p1) => `<Image src="${match.substring(4, match.length - 1)}" alt="${article.title}" ${p1} style="max-width:100%; height:auto; margin:1rem auto; display:block;" />`
               )
             }}
           />
