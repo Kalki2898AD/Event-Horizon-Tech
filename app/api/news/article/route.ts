@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if article exists in database
-    const { data: existingArticle, error: fetchError } = await supabase
+    const { data: existingArticle } = await supabase
       .from('articles')
       .select('*')
       .eq('url', articleUrl)
