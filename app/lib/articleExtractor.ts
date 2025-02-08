@@ -1,4 +1,6 @@
 import * as cheerio from 'cheerio';
+import { load } from 'cheerio';
+import type { AnyNode, Element } from 'cheerio';
 
 interface ExtractedArticle {
   title: string;
@@ -24,7 +26,7 @@ export async function extractArticleContent(
   url: string,
   urlToImage?: string | null
 ): Promise<ExtractedArticle> {
-  const $ = cheerio.load(html);
+  const $ = load(html);
   
   // Remove unwanted elements
   $('script, style, iframe, nav, footer, header, aside, .ad, .advertisement, .social-share, .related-articles, .comments').remove();
@@ -92,9 +94,9 @@ export async function extractArticleContent(
     });
   }
 
-  function processNode(node: cheerio.Element) {
+  function processNode(node: AnyNode) {
     const $node = $(node);
-    const tagName = node.tagName.toLowerCase();
+    const tagName = node.tagName?.toLowerCase();
 
     // Skip empty nodes and unwanted elements
     if (!$node.text().trim() && !['img'].includes(tagName)) {
