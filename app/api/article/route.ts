@@ -2,14 +2,19 @@ import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import type { Article } from '@/types';
 
-export async function GET(request: Request): Promise<NextResponse> {
+interface ErrorResponse {
+  error: string;
+  status: number;
+}
+
+export async function GET(request: Request): Promise<NextResponse<Article | ErrorResponse>> {
   try {
     const url = new URL(request.url);
     const articleUrl = url.searchParams.get('url');
 
     if (!articleUrl) {
       return NextResponse.json(
-        { error: 'URL parameter is required' },
+        { error: 'URL parameter is required', status: 400 },
         { status: 400 }
       );
     }
@@ -23,16 +28,16 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     if (fetchError || !article) {
       return NextResponse.json(
-        { error: 'Article not found' },
+        { error: 'Article not found', status: 404 },
         { status: 404 }
       );
     }
 
     return NextResponse.json(article as Article);
-  } catch (error: any) {
-    console.error('Error fetching article:', error);
+  } catch (error) {
+    console.error('Error fetching article:', error instanceof Error ? error.message : 'Unknown error');
     return NextResponse.json(
-      { error: 'Failed to fetch article' },
+      { error: 'Failed to fetch article', status: 500 },
       { status: 500 }
     );
   }

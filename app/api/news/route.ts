@@ -3,8 +3,6 @@ import { fetchNews } from '@/lib/newsApi';
 import { supabase } from '@/lib/supabase';
 import type { Article } from '@/types';
 
-const NEWS_API_KEY = process.env.NEWS_API_KEY;
-
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
