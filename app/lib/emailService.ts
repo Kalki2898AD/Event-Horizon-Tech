@@ -96,7 +96,7 @@ export async function sendNewsletterEmail(to: string, template: EmailTemplate) {
       to: [to],
       subject: `Your ${frequency} Tech News Update from Event Horizon Tech`,
       html,
-      reply_to: 'budgetbuddy567@gmail.com'
+      replyTo: 'budgetbuddy567@gmail.com'
     });
 
     if (error) {
