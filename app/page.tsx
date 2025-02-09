@@ -5,7 +5,7 @@ import NewsCard from './components/NewsCard';
 import NewsletterDialog from './components/NewsletterDialog';
 import AdContainer from './components/AdContainer';
 import ScrollToTop from './components/ScrollToTop';
-import { Article } from '@/app/types';
+import { Article } from './types';
 
 const AdSection = ({ children }: { children: React.ReactNode }) => (
   <div className="w-full bg-white shadow-sm mb-8">
