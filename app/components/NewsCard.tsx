@@ -96,7 +96,7 @@ export default function NewsCard({ article }: NewsCardProps) {
             <p className="text-sm text-gray-500">
               {article.source && (
                 <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold mr-2">
-                  {article.source}
+                  {article.source.name}
                 </span>
               )}
               {formattedDate}
