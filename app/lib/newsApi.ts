@@ -28,13 +28,17 @@ export async function fetchNews(query?: string): Promise<Article[]> {
     }
 
     return response.data.articles.map((article) => ({
+      source: {
+        id: article.source.id || null,
+        name: article.source.name || ''
+      },
+      author: article.author || null,
       title: article.title || '',
       description: article.description || '',
       url: article.url || '',
-      urlToImage: article.urlToImage || '',
-      publishedAt: article.publishedAt || new Date().toISOString(),
-      source: article.source?.name || '',
-      content: article.content || '',
+      urlToImage: article.urlToImage || null,
+      publishedAt: article.publishedAt || '',
+      content: article.content || ''
     }));
   } catch (error) {
     console.error('Error fetching news:', error);
