@@ -52,7 +52,8 @@ export async function GET(request: Request) {
       title: article.title || '',
       description: article.description || '',
       urlToImage: article.urlToImage || '',
-      url: `/article?url=${encodeURIComponent(article.url)}`
+      url: article.url || '',
+      source: { name: '' }  // Add empty source to prevent undefined errors
     }));
 
     return NextResponse.json({ articles: sanitizedArticles });

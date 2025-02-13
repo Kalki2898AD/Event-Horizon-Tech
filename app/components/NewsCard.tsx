@@ -24,27 +24,29 @@ export default function NewsCard({ article }: NewsCardProps) {
 
   return (
     <div 
-      className="w-full h-full flex flex-col rounded-lg border bg-white shadow-sm hover:shadow-lg transition-shadow duration-200 cursor-pointer" 
+      className="w-full h-full flex flex-col rounded-lg border bg-white shadow-sm hover:shadow-lg transition-shadow duration-200 cursor-pointer overflow-hidden" 
       onClick={handleCardClick}
     >
       {article.urlToImage && !isImageError && (
         <div className="relative w-full pt-[56.25%]">
           <Image
             src={article.urlToImage}
-            alt={article.title}
+            alt=""
             fill
-            className="rounded-t-lg object-cover"
+            className="object-cover"
             onError={() => setIsImageError(true)}
           />
         </div>
       )}
-      <div className="p-6">
-        <h3 className="text-xl font-bold mb-2 line-clamp-2 text-gray-900">
+      <div className="p-4 flex-1">
+        <h3 className="text-lg font-semibold mb-2 text-gray-900 line-clamp-2">
           {article.title}
         </h3>
-        <p className="text-gray-600 text-sm line-clamp-3 mb-4">
-          {article.description}
-        </p>
+        {article.description && (
+          <p className="text-gray-600 text-sm line-clamp-3">
+            {article.description}
+          </p>
+        )}
       </div>
     </div>
   );
