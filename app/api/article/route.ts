@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
 import type { Article } from '@/types';
 import * as cheerio from 'cheerio';
 

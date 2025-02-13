@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import AdContainer from './AdContainer';
 import ScrollToTop from './ScrollToTop';
 import Image from 'next/image';
 
