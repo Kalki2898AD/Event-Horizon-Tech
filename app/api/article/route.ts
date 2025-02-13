@@ -1,10 +1,39 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import type { Article } from '@/types';
+import * as cheerio from 'cheerio';
 
 interface ErrorResponse {
   error: string;
   status: number;
+}
+
+async function fetchAndParseArticle(url: string) {
+  const response = await fetch(url);
+  const html = await response.text();
+  const $ = cheerio.load(html);
+
+  // Remove unwanted elements
+  $('script, style, iframe, nav, header, footer, .ads, .social-share, .comments').remove();
+
+  // Get the main content
+  const article = $('article').first();
+  const content = article.length ? article.html() : $('main').first().html() || $('body').html();
+
+  // Clean the content
+  const cleanContent = content
+    ?.replace(/<a[^>]*>/g, '') // Remove links
+    .replace(/<\/a>/g, '')
+    .replace(/class="[^"]*"/g, '') // Remove classes
+    .replace(/id="[^"]*"/g, '') // Remove IDs
+    .replace(/style="[^"]*"/g, '') // Remove inline styles
+    .trim();
+
+  return {
+    title: $('h1').first().text() || $('title').text(),
+    description: $('meta[name="description"]').attr('content') || '',
+    content: cleanContent || '',
+  };
 }
 
 export async function GET(request: Request): Promise<NextResponse<Article | ErrorResponse>> {
@@ -19,25 +48,24 @@ export async function GET(request: Request): Promise<NextResponse<Article | Erro
       );
     }
 
-    // Fetch article from Supabase
-    const { data: article, error: fetchError } = await supabase
-      .from('articles')
-      .select('*')
-      .eq('url', articleUrl)
-      .single();
-
-    if (fetchError || !article) {
+    try {
+      const articleContent = await fetchAndParseArticle(articleUrl);
+      
+      return NextResponse.json({
+        ...articleContent,
+        url: articleUrl,
+      });
+    } catch (error) {
+      console.error('Error fetching article content:', error);
       return NextResponse.json(
-        { error: 'Article not found', status: 404 },
-        { status: 404 }
+        { error: 'Failed to fetch article content', status: 500 },
+        { status: 500 }
       );
     }
-
-    return NextResponse.json(article as Article);
   } catch (error) {
-    console.error('Error fetching article:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('Error in article API:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch article', status: 500 },
+      { error: 'Internal server error', status: 500 },
       { status: 500 }
     );
   }
