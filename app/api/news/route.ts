@@ -49,10 +49,14 @@ export async function GET(request: Request) {
 
     // Only return necessary article data
     const sanitizedArticles = articles.map(article => ({
-      title: article.title,
-      description: article.description,
-      urlToImage: article.urlToImage,
-      url: article.url
+      title: article.title || '',
+      description: article.description || '',
+      urlToImage: article.urlToImage || '',
+      url: article.url || '',
+      source: {
+        name: article.source?.name || ''
+      },
+      publishedAt: article.publishedAt || ''
     }));
 
     return NextResponse.json({ articles: sanitizedArticles });
