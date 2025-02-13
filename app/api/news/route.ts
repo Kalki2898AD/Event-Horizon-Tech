@@ -24,46 +24,42 @@ export async function GET(request: Request) {
 
       if (error) {
         console.error('Error fetching fallback articles:', error);
-        return NextResponse.json({ 
-          status: 'error',
-          error: 'Failed to fetch articles',
-          articles: [] 
-        }, { status: 500 });
+        return NextResponse.json({ error: 'Failed to fetch articles' }, { status: 500 });
       }
 
       articles = fallbackArticles || [];
     }
 
-    // Ensure articles is always an array
-    if (!Array.isArray(articles)) {
-      articles = [];
+    // Store articles in Supabase for caching
+    if (articles.length > 0) {
+      console.log('Storing articles in Supabase...');
+      const { error } = await supabase
+        .from('articles')
+        .upsert(
+          articles.map((article: Article) => ({
+            ...article,
+            id: article.url,
+          }))
+        );
+
+      if (error) {
+        console.error('Error storing articles:', error);
+      }
     }
 
-    // Return standardized response format
-    return NextResponse.json({
-      status: 'ok',
-      articles: articles.map(article => ({
-        source: {
-          id: article.source?.id || null,
-          name: article.source?.name || 'Unknown'
-        },
-        author: article.author || null,
-        title: article.title || '',
-        description: article.description || '',
-        url: article.url || '',
-        urlToImage: article.urlToImage || null,
-        publishedAt: article.publishedAt || '',
-        content: article.content || ''
-      }))
-    });
+    // Only return necessary article data
+    const sanitizedArticles = articles.map(article => ({
+      title: article.title,
+      description: article.description,
+      urlToImage: article.urlToImage,
+      url: article.url
+    }));
+
+    return NextResponse.json({ articles: sanitizedArticles });
   } catch (error) {
     console.error('Error in news API:', error);
     return NextResponse.json(
-      { 
-        status: 'error',
-        error: 'Failed to fetch articles',
-        articles: [] 
-      },
+      { error: 'Failed to fetch articles' },
       { status: 500 }
     );
   }
