@@ -47,16 +47,12 @@ export async function GET(request: Request) {
       }
     }
 
-    // Only return necessary article data
+    // Only return necessary article data with minimal information
     const sanitizedArticles = articles.map(article => ({
       title: article.title || '',
       description: article.description || '',
       urlToImage: article.urlToImage || '',
-      url: article.url || '',
-      source: {
-        name: article.source?.name || ''
-      },
-      publishedAt: article.publishedAt || ''
+      url: `/article?url=${encodeURIComponent(article.url)}`
     }));
 
     return NextResponse.json({ articles: sanitizedArticles });
