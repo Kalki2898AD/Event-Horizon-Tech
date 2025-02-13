@@ -49,10 +49,12 @@ function SearchResults() {
         setLoading(true);
         setError(null);
         const response = await fetch(`/api/news/search?q=${encodeURIComponent(query)}`);
-        const data = await response.json();
-
         if (!response.ok) {
-          throw new Error(data.error || 'Failed to search articles');
+          throw new Error('Network response was not ok');
+        }
+        const data = await response.json();
+        if (!data.articles) {
+          throw new Error('Invalid response format');
         }
 
         setArticles(data.articles || []);
