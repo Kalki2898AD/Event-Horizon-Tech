@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import NewsCard from '../components/NewsCard';
 import AdContainer from '../components/AdContainer';
@@ -18,7 +18,19 @@ const AdSection = ({ children }: { children: React.ReactNode }) => (
   </div>
 );
 
-export default function SearchResults() {
+import React, { Suspense } from 'react';
+
+const SearchPageWrapper = () => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SearchResults />
+    </Suspense>
+  );
+};
+
+export default SearchPageWrapper;
+
+function SearchResults() {
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
   const [articles, setArticles] = useState<Article[]>([]);
@@ -63,53 +75,51 @@ export default function SearchResults() {
           {query ? `Search Results for "${query}"` : 'Search Results'}
         </h1>
 
-        <Suspense fallback={<div>Loading...</div>}>
-          {loading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-            </div>
-          ) : error ? (
-            <div className="text-center text-red-500 py-8">{error}</div>
-          ) : articles.length === 0 ? (
-            <div className="text-center text-gray-500 py-8">
-              {query ? 'No articles found for your search.' : 'Enter a search term to find articles.'}
-            </div>
-          ) : (
-            <div>
-              {/* Top Ad */}
-              <AdSection>
-                <AdContainer slot="1234567890" />
-              </AdSection>
+        {loading ? (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+          </div>
+        ) : error ? (
+          <div className="text-center text-red-500 py-8">{error}</div>
+        ) : articles.length === 0 ? (
+          <div className="text-center text-gray-500 py-8">
+            {query ? 'No articles found for your search.' : 'Enter a search term to find articles.'}
+          </div>
+        ) : (
+          <div>
+            {/* Top Ad */}
+            <AdSection>
+              <AdContainer slot="1234567890" />
+            </AdSection>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {articles.map((article, index) => (
-                  <>
-                    <div key={article.url}>
-                      <NewsCard article={article} />
-                    </div>
-                    {(index + 1) % 6 === 0 && index !== articles.length - 1 && (
-                      <div className="col-span-full w-full">
-                        <div className="max-w-7xl mx-auto bg-white shadow-sm my-8">
-                          <div className="p-2 border-b border-gray-100">
-                            <p className="text-xs text-gray-500 text-center">Advertisement</p>
-                          </div>
-                          <div className="flex justify-center p-4 min-h-[250px] items-center">
-                            <AdContainer slot="1234567890" />
-                          </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {articles.map((article, index) => (
+                <>
+                  <div key={article.url}>
+                    <NewsCard article={article} />
+                  </div>
+                  {(index + 1) % 6 === 0 && index !== articles.length - 1 && (
+                    <div className="col-span-full w-full">
+                      <div className="max-w-7xl mx-auto bg-white shadow-sm my-8">
+                        <div className="p-2 border-b border-gray-100">
+                          <p className="text-xs text-gray-500 text-center">Advertisement</p>
+                        </div>
+                        <div className="flex justify-center p-4 min-h-[250px] items-center">
+                          <AdContainer slot="1234567890" />
                         </div>
                       </div>
-                    )}
-                  </>
-                ))}
-              </div>
-
-              {/* Bottom Ad */}
-              <AdSection>
-                <AdContainer slot="1234567890" />
-              </AdSection>
+                    </div>
+                  )}
+                </>
+              ))}
             </div>
-          )}
-        </Suspense>
+
+            {/* Bottom Ad */}
+            <AdSection>
+              <AdContainer slot="1234567890" />
+            </AdSection>
+          </div>
+        )}
       </main>
       <ScrollToTop />
     </div>
