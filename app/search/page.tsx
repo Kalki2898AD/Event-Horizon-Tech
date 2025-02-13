@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import NewsCard from '../components/NewsCard';
 import AdContainer from '../components/AdContainer';
 import ScrollToTop from '../components/ScrollToTop';
-import { Article } from '@/app/types';
+import { Article } from '../types';
 
 const AdSection = ({ children }: { children: React.ReactNode }) => (
   <div className="max-w-7xl mx-auto bg-white shadow-sm mb-8">
@@ -77,7 +77,7 @@ export default function SearchResults() {
           <div>
             {/* Top Ad */}
             <AdSection>
-              <AdContainer />
+              <AdContainer slot="1234567890" />
             </AdSection>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -93,7 +93,7 @@ export default function SearchResults() {
                           <p className="text-xs text-gray-500 text-center">Advertisement</p>
                         </div>
                         <div className="flex justify-center p-4 min-h-[250px] items-center">
-                          <AdContainer />
+                          <AdContainer slot="1234567890" />
                         </div>
                       </div>
                     </div>
@@ -104,7 +104,7 @@ export default function SearchResults() {
 
             {/* Bottom Ad */}
             <AdSection>
-              <AdContainer />
+              <AdContainer slot="1234567890" />
             </AdSection>
           </div>
         )}

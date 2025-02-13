@@ -10,6 +10,11 @@ export interface Article {
   urlToImage: string | null;
   publishedAt: string;
   content: string | null;
+  id?: string; // Optional property
+  byline?: string; // Optional property
+  siteName?: string; // Optional property
+  created_at?: string; // Optional property
+  user_email?: string; // Optional property
 }
 
 export interface NewsAPIResponse {
