@@ -1,41 +1,130 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-/node_modules
-/.pnp
+node_modules/
+.pnp/
 .pnp.js
 .yarn/*
 !.yarn/patches
 !.yarn/plugins
 !.yarn/releases
+!.yarn/sdks
 !.yarn/versions
 
 # testing
-/coverage
+coverage/
+cypress/
+test/
+tests/
+e2e/
+__tests__/
+__mocks__/
+*.test.js
+*.test.ts
+*.test.tsx
+*.spec.js
+*.spec.ts
+*.spec.tsx
 
 # next.js
-/.next/
-/out/
+.next/
+out/
+next-env.d.ts
 
 # production
-/build
+build/
+dist/
+*.prod.*
 
 # misc
 .DS_Store
 *.pem
+Thumbs.db
+.cache
+*.bak
+*.swp
+*.swo
 
 # debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+debug.log
+logs/
+log/
+*.log
 
 # local env files
-.env*.local
+.env
+.env.*
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+*.env
+.envrc
 
 # vercel
 .vercel
 
 # typescript
 *.tsbuildinfo
-next-env.d.ts
+
+# IDE
+.idea/
+.vscode/
+*.sublime-*
+.project
+.classpath
+.settings/
+*.code-workspace
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# API keys and secrets
+*.key
+*.pem
+*.cert
+*.p12
+*.pfx
+*.crt
+*.csr
+*.pub
+*.secret
+*_rsa
+*_ecdsa
+*_ed25519
+google-credentials.json
+credentials.json
+client_secret*.json
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+
+# Package manager
+.npm
+.yarn-integrity
+package-lock.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
