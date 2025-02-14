@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { JSDOM } from 'jsdom';
 import { Readability } from '@mozilla/readability';
 import axios from 'axios';
-import { Article } from '@/types';
+import { Article } from '../../../types';
 
 interface ErrorResponse {
   error: string;
