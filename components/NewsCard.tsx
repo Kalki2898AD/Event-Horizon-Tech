@@ -2,6 +2,7 @@ import React from 'react';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
 import { Article } from '../types';
+import { signIn } from 'next-auth/react';
 
 interface NewsCardProps {
   article: Article;
@@ -33,6 +34,15 @@ const NewsCard: React.FC<NewsCardProps> = ({ article }) => {
       <time className="text-gray-400 text-sm">
         {new Date(publishedAt).toLocaleDateString()}
       </time>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          signIn('google', { callbackUrl: '/' });
+        }}
+        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+      >
+        Sign in with Google
+      </button>
     </div>
   );
 };

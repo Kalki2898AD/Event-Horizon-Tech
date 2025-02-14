@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { Article } from '@/types';
 import { LoadingSpinner, ErrorMessage } from '../../components/LoadingSpinner';
+import ScrollToTop from '../components/ScrollToTop';
 
 export default function ArticleView() {
   const searchParams = useSearchParams();
@@ -42,22 +43,25 @@ export default function ArticleView() {
   if (error || !article) return <ErrorMessage message={error || 'Failed to load article'} />;
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6 text-white">{article.title}</h1>
-      {article.urlToImage && (
-        <div className="relative w-full h-96 mb-6">
-          <Image 
-            src={article.urlToImage} 
-            alt={article.title}
-            fill
-            className="object-cover rounded-lg"
-          />
-        </div>
-      )}
-      <div 
-        className="prose prose-lg prose-invert max-w-none"
-        dangerouslySetInnerHTML={{ __html: article.content || '' }} // Add fallback for null
-      />
+    <div className="min-h-screen bg-gray-50 pt-24 pb-10">
+      <div className="max-w-4xl mx-auto px-4">
+        <h1 className="text-3xl font-bold mb-6 text-gray-900">{article.title}</h1>
+        {article.urlToImage && (
+          <div className="relative w-full h-96 mb-6">
+            <Image 
+              src={article.urlToImage} 
+              alt={article.title}
+              fill
+              className="object-cover rounded-lg"
+            />
+          </div>
+        )}
+        <div 
+          className="prose prose-lg max-w-none"
+          dangerouslySetInnerHTML={{ __html: article.content || '' }}
+        />
+      </div>
+      <ScrollToTop />
     </div>
   );
 }
