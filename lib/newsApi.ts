@@ -16,23 +16,7 @@ export async function fetchNews(query?: string): Promise<Article[]> {
       }
     });
 
-    // Convert NewsAPIArticle to Article
-    return response.data.articles.map(article => {
-      const converted: Article = {
-        title: article.title || '',
-        description: article.description || '',
-        content: article.content || '',
-        urlToImage: article.urlToImage || '/images/placeholder.jpg',
-        url: article.url,
-        publishedAt: article.publishedAt,
-        source: {
-          id: article.source?.id || null,
-          name: article.source?.name || ''
-        },
-        author: article.author || 'Unknown'
-      };
-      return converted;
-    });
+    return response.data.articles;
   } catch (error) {
     console.error('Error fetching news:', error);
     throw error;

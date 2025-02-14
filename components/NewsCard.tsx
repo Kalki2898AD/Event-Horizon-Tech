@@ -14,7 +14,7 @@ const NewsCard: React.FC<NewsCardProps> = ({ article }) => {
   return (
     <div 
       className="bg-[#1a1a2e] hover:bg-[#16213e] transition-colors duration-300 rounded-lg shadow-lg p-4 cursor-pointer"
-      onClick={() => router.push(`/article/${encodeURIComponent(url)}`)}
+      onClick={() => router.push(`/article?url=${encodeURIComponent(url)}`)}
     >
       <div className="relative w-full h-48 mb-4">
         <Image 

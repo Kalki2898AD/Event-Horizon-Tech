@@ -2,14 +2,14 @@ export interface Article {
   title: string;
   description: string;
   content: string;
-  urlToImage: string;
+  urlToImage: string | null;
   url: string;
   publishedAt: string;
   source: {
     id: string | null;
     name: string;
   };
-  author: string;
+  author: string | null;
 }
 
 interface NewsAPIArticle {
@@ -29,7 +29,7 @@ interface NewsAPIArticle {
 export interface NewsAPIResponse {
   status: string;
   totalResults: number;
-  articles: NewsAPIArticle[];
+  articles: Article[];
 }
 
 export interface Subscriber {
