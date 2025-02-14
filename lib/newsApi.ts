@@ -17,8 +17,17 @@ export async function fetchNews(query?: string): Promise<Article[]> {
     });
 
     return response.data.articles.map((article) => ({
-      ...article,
+      title: article.title || '',
+      description: article.description || '',
+      content: article.content || '',
       urlToImage: article.urlToImage || '', // Ensure urlToImage is always a string
+      url: article.url,
+      publishedAt: article.publishedAt,
+      source: {
+        id: article.source.id || null,
+        name: article.source.name || ''
+      },
+      author: article.author || 'Unknown'
     }));
   } catch (error) {
     console.error('Error fetching news:', error);
