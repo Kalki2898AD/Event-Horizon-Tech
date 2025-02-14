@@ -6,42 +6,40 @@ import Image from 'next/image';
 import { Article } from '@/types';
 import { LoadingSpinner, ErrorMessage } from '../../components/LoadingSpinner';
 
-interface ArticleViewProps {
-  url: string;
-  onError: (error: string) => void;
-}
-
-export default function ArticleView({ url, onError }: ArticleViewProps) {
+export default function ArticleView() {
   const searchParams = useSearchParams();
-  const urlToImage = searchParams?.get('urlToImage') || '';  // Add null check and default value
+  const url = searchParams?.get('url') || '';
+  const urlToImage = searchParams?.get('urlToImage') || '';
   const [article, setArticle] = useState<Article | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchArticle() {
+    if (!url) {
+      setError('URL is required');
+      setIsLoading(false);
+      return;
+    }
+
+    const fetchArticle = async () => {
       try {
         setIsLoading(true);
         const response = await fetch(`/api/news/article?url=${encodeURIComponent(url)}&urlToImage=${urlToImage}`);
         const data = await response.json();
-
-        if (data.error) {
-          throw new Error(data.error);
-        }
-
         setArticle(data);
-      } catch (error) {
-        console.error('Error fetching article:', error);
-        onError(error instanceof Error ? error.message : 'Failed to fetch article');
+      } catch (err) {
+        setError('Failed to load article');
+        console.error(err);
       } finally {
         setIsLoading(false);
       }
-    }
+    };
 
     fetchArticle();
-  }, [url, urlToImage, onError]);
+  }, [url, urlToImage]); // Include both dependencies
 
   if (isLoading) return <LoadingSpinner />;
-  if (!article) return <ErrorMessage message="Failed to load article" />;
+  if (error || !article) return <ErrorMessage message={error || 'Failed to load article'} />;
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -58,7 +56,7 @@ export default function ArticleView({ url, onError }: ArticleViewProps) {
       )}
       <div 
         className="prose prose-lg prose-invert max-w-none"
-        dangerouslySetInnerHTML={{ __html: article.content }}
+        dangerouslySetInnerHTML={{ __html: article.content || '' }} // Add fallback for null
       />
     </div>
   );
