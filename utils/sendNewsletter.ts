@@ -1,6 +1,5 @@
 import { Resend } from 'resend';
 import { createClient } from '@supabase/supabase-js';
-import moment from 'moment-timezone';
 import { fetchTodaysNews } from './api';
 import { Article } from '../types';
 
@@ -13,13 +12,13 @@ const supabase = createClient(
 export async function sendNewsletters() {
   try {
     const currentDate = new Date();
-    const timezones = getTimezonesAt8AM(currentDate);
+    const currentHour = currentDate.getUTCHours();
     
-    // Get subscribers from Supabase
+    // Get subscribers from Supabase where local time is 8 AM
     const { data: subscribers, error } = await supabase
       .from('subscribers')
       .select('*')
-      .in('timezone', timezones);
+      .eq('send_hour', currentHour);
 
     if (error) throw error;
     if (!subscribers || subscribers.length === 0) return;
@@ -37,14 +36,6 @@ export async function sendNewsletters() {
   } catch (error) {
     console.error('Error sending newsletters:', error);
   }
-}
-
-function getTimezonesAt8AM(date: Date): string[] {
-  const targetHour = 8;
-  return moment.tz.names().filter(timezone => {
-    const time = moment(date).tz(timezone);
-    return time.hour() === targetHour && time.minute() === 0;
-  });
 }
 
 function generateNewsletterHTML(articles: Article[]): string {
