@@ -1,9 +1,12 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { Resend } from 'resend';
-import { PrismaClient } from '@prisma/client';
+import { createClient } from '@supabase/supabase-js';
 
-const prisma = new PrismaClient();
 const resend = new Resend(process.env.RESEND_API_KEY);
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export default async function handler(
   req: NextApiRequest,
@@ -22,23 +25,32 @@ export default async function handler(
     }
 
     // Check if subscriber already exists
-    const existingSubscriber = await prisma.subscriber.findUnique({
-      where: { email }
-    });
+    const { data: existingSubscriber } = await supabase
+      .from('subscribers')
+      .select()
+      .eq('email', email)
+      .single();
 
     if (existingSubscriber) {
       return res.status(400).json({ error: 'Email already subscribed' });
     }
 
-    // Store subscriber in database
-    await prisma.subscriber.create({
-      data: { 
-        email, 
-        timezone 
-      }
-    });
+    // Store subscriber in Supabase
+    const { error: insertError } = await supabase
+      .from('subscribers')
+      .insert([
+        { 
+          email, 
+          timezone,
+          created_at: new Date().toISOString()
+        }
+      ]);
 
-    // Send welcome email
+    if (insertError) {
+      throw insertError;
+    }
+
+    // Send welcome email using Resend
     await resend.emails.send({
       from: 'news@eventhorizonlive.space',
       to: email,

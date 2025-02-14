@@ -1,26 +1,28 @@
 import { Resend } from 'resend';
-import { PrismaClient } from '@prisma/client';
+import { createClient } from '@supabase/supabase-js';
 import moment from 'moment-timezone';
 import { fetchTodaysNews } from './api';
 import { Article } from '../types';
 
-const prisma = new PrismaClient();
 const resend = new Resend(process.env.RESEND_API_KEY);
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export async function sendNewsletters() {
   try {
     const currentDate = new Date();
     const timezones = getTimezonesAt8AM(currentDate);
     
-    const subscribers = await prisma.subscriber.findMany({
-      where: {
-        timezone: {
-          in: timezones
-        }
-      }
-    });
+    // Get subscribers from Supabase
+    const { data: subscribers, error } = await supabase
+      .from('subscribers')
+      .select('*')
+      .in('timezone', timezones);
 
-    if (subscribers.length === 0) return;
+    if (error) throw error;
+    if (!subscribers || subscribers.length === 0) return;
 
     const news = await fetchTodaysNews();
     
