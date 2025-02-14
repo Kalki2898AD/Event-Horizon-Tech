@@ -1,12 +1,17 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { Article } from '@/types';
-import { LoadingSpinner, ErrorMessage } from '@/components/LoadingSpinner';
+import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
+import { Article } from '@/types';
+import { LoadingSpinner, ErrorMessage } from '../../components/LoadingSpinner';
 
-function ArticleContent() {
+interface ArticleViewProps {
+  url: string;
+  onError: (error: string) => void;
+}
+
+export default function ArticleContent() {
   const searchParams = useSearchParams();
   const url = searchParams?.get('url') || '';
   const [error, setError] = useState<string | null>(null);
@@ -14,33 +19,33 @@ function ArticleContent() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!url) {
-      setError('URL is required');
-      setLoading(false);
-      return;
+    async function fetchArticle() {
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/news/article?url=${encodeURIComponent(url)}&urlToImage=${urlToImage}`);
+        const data = await response.json();
+
+        if (data.error) {
+          throw new Error(data.error);
+        }
+
+        setArticle(data);
+      } catch (error) {
+        console.error('Error fetching article:', error);
+        onError(error instanceof Error ? error.message : 'Failed to fetch article');
+      } finally {
+        setLoading(false);
+      }
     }
 
-    fetch(`/api/article?url=${encodeURIComponent(url)}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.error) {
-          setError(data.error);
-        } else {
-          setArticle(data);
-        }
-        setLoading(false);
-      })
-      .catch(err => {
-        setError(err.message);
-        setLoading(false);
-      });
-  }, [url]);
+    fetchArticle();
+  }, [url, urlToImage, onError]);
 
   if (loading) return <LoadingSpinner />;
   if (error || !article) return <ErrorMessage message={error || 'Article not found'} />;
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto">
       <h1 className="text-3xl font-bold mb-6 text-white">{article.title}</h1>
       {article.urlToImage && (
         <div className="relative w-full h-96 mb-6">
@@ -54,10 +59,8 @@ function ArticleContent() {
       )}
       <div 
         className="prose prose-lg prose-invert max-w-none"
-        dangerouslySetInnerHTML={{ __html: article.content }}
+        dangerouslySetInnerHTML={{ __html: article.content || '' }}
       />
     </div>
   );
 }
-
-export default ArticleContent;
