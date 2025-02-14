@@ -53,6 +53,13 @@ export default function Home() {
     fetchArticles();
   }, []);
 
+  const processArticle = (article: Article): Article => ({
+    ...article,
+    description: article.description || '',
+    content: article.content || '',
+    urlToImage: article.urlToImage || '/images/placeholder.jpg'
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 pt-24 pb-10">
@@ -116,23 +123,7 @@ export default function Home() {
         {/* News grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {articles.map((article, index) => {
-            // Ensure all required fields are present
-            const processedArticle: Article = {
-              id: article.id || `article-${index}`,
-              url: article.url,
-              title: article.title,
-              description: article.description || article.title,
-              content: article.content,
-              author: article.author || 'Unknown Author',
-              publishedAt: article.publishedAt,
-              source: article.source,
-              urlToImage: article.urlToImage || '/placeholder.jpg',
-              byline: article.byline || article.author || 'Unknown Author',
-              siteName: article.siteName || article.source.name,
-              created_at: article.created_at || article.publishedAt,
-              user_email: article.user_email || 'budgetbuddy567@gmail.com'
-            };
-            
+            const processedArticle = processArticle(article);
             const key = processedArticle.url || `article-${index}`;
             return (
               <div key={key} className="contents">

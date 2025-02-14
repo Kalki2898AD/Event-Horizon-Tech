@@ -29,7 +29,7 @@ const NewsCard: React.FC<NewsCardProps> = ({ article }) => {
         />
       </div>
       <h2 className="text-xl font-bold text-white mb-2">{title}</h2>
-      <p className="text-gray-300 mb-4">{description}</p>
+      {description && <p className="text-gray-300 mb-4">{description}</p>}
       <time className="text-gray-400 text-sm">
         {new Date(publishedAt).toLocaleDateString()}
       </time>
