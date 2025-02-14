@@ -6,6 +6,10 @@ const nextConfig = {
     }
   },
   images: {
+    domains: [
+      'images.example.com', // Add your image domains here
+      'cdn.example.com',
+    ],
     remotePatterns: [
       {
         protocol: 'https',

@@ -1,71 +1,54 @@
 import { NextResponse } from 'next/server';
-import type { Article } from '@/types';
-import * as cheerio from 'cheerio';
+import { JSDOM } from 'jsdom';
+import { Readability } from '@mozilla/readability';
+import axios from 'axios';
+import { Article } from '@/types';
 
 interface ErrorResponse {
   error: string;
-  status: number;
 }
 
 async function fetchAndParseArticle(url: string) {
-  const response = await fetch(url);
-  const html = await response.text();
-  const $ = cheerio.load(html);
-
-  // Remove unwanted elements
-  $('script, style, iframe, nav, header, footer, .ads, .social-share, .comments').remove();
-
-  // Get the main content
-  const article = $('article').first();
-  const content = article.length ? article.html() : $('main').first().html() || $('body').html();
-
-  // Clean the content
-  const cleanContent = content
-    ?.replace(/<a[^>]*>/g, '') // Remove links
-    .replace(/<\/a>/g, '')
-    .replace(/class="[^"]*"/g, '') // Remove classes
-    .replace(/id="[^"]*"/g, '') // Remove IDs
-    .replace(/style="[^"]*"/g, '') // Remove inline styles
-    .trim();
-
+  const response = await axios.get(url);
+  const dom = new JSDOM(response.data);
+  const reader = new Readability(dom.window.document);
+  const article = reader.parse();
+  
   return {
-    title: $('h1').first().text() || $('title').text(),
-    description: $('meta[name="description"]').attr('content') || '',
-    content: cleanContent || '',
+    title: article?.title || '',
+    description: article?.excerpt || '',
+    content: article?.content || '',
   };
 }
 
-export async function GET(request: Request): Promise<NextResponse<Article | ErrorResponse>> {
+export async function GET(request: Request) {
   try {
-    const url = new URL(request.url);
-    const articleUrl = url.searchParams.get('url');
+    const { searchParams } = new URL(request.url);
+    const articleUrl = searchParams.get('url');
 
     if (!articleUrl) {
-      return NextResponse.json(
-        { error: 'URL parameter is required', status: 400 },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'URL parameter is required' } as ErrorResponse);
     }
 
-    try {
-      const articleContent = await fetchAndParseArticle(articleUrl);
-      
-      return NextResponse.json({
-        ...articleContent,
-        url: articleUrl,
-      });
-    } catch (error) {
-      console.error('Error fetching article content:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch article content', status: 500 },
-        { status: 500 }
-      );
-    }
+    const articleContent = await fetchAndParseArticle(articleUrl);
+    
+    // Create a complete Article object
+    const article: Article = {
+      url: articleUrl,
+      title: articleContent.title,
+      description: articleContent.description,
+      content: articleContent.content,
+      urlToImage: '', // You might want to extract this from the article
+      publishedAt: new Date().toISOString(),
+      source: {
+        name: new URL(articleUrl).hostname
+      },
+      author: 'Unknown' // Or extract from the article if available
+    };
+
+    return NextResponse.json(article);
   } catch (error) {
-    console.error('Error in article API:', error);
-    return NextResponse.json(
-      { error: 'Internal server error', status: 500 },
-      { status: 500 }
-    );
+    console.error('Error fetching article:', error);
+    return NextResponse.json({ error: 'Failed to fetch article' } as ErrorResponse);
   }
 }
