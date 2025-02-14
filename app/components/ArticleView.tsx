@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { Article } from '@/types';
-import { LoadingSpinner, ErrorMessage } from './LoadingSpinner';
+import { LoadingSpinner, ErrorMessage } from '../../components/LoadingSpinner';
 
 interface ArticleViewProps {
   url: string;
