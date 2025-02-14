@@ -9,10 +9,14 @@ export async function extractArticle(url: string) {
     const reader = new Readability(dom.window.document);
     const article = reader.parse();
     
+    if (!article) {
+      throw new Error('Failed to parse article');
+    }
+    
     return {
-      title: article?.title || '',
-      description: article?.excerpt || '',
-      content: article?.content || '',
+      title: article.title || '',
+      description: article.excerpt || '',
+      content: article.content || '',
     };
   } catch (error) {
     console.error('Error extracting article:', error);

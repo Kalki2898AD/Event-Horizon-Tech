@@ -31,14 +31,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(existingArticle);
     }
 
-    // Fetch article content
-    const response = await fetch(articleUrl);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch article: ${response.statusText}`);
-    }
-
-    const html = await response.text();
-    const article = await extractArticle(html, articleUrl);
+    // Extract article content
+    const article = await extractArticle(articleUrl);
 
     // Store article in database
     const { error: insertError } = await supabase
@@ -46,14 +40,31 @@ export async function GET(request: NextRequest) {
       .insert([{
         url: articleUrl,
         urlToImage,
-        ...article
+        ...article,
+        publishedAt: new Date().toISOString(),
+        source: {
+          id: null,
+          name: new URL(articleUrl).hostname
+        },
+        author: 'Unknown'
       }]);
 
     if (insertError) {
       console.error('Error storing article:', insertError);
     }
 
-    return NextResponse.json(article);
+    return NextResponse.json({
+      ...article,
+      url: articleUrl,
+      urlToImage,
+      publishedAt: new Date().toISOString(),
+      source: {
+        id: null,
+        name: new URL(articleUrl).hostname
+      },
+      author: 'Unknown'
+    });
+
   } catch (error) {
     console.error('Error processing article:', error);
     return NextResponse.json(
