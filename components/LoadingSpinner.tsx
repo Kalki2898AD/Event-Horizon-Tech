@@ -6,9 +6,13 @@ export const LoadingSpinner: React.FC = () => (
   </div>
 );
 
-export const ErrorMessage: React.FC = () => (
+interface ErrorMessageProps {
+  message?: string;
+}
+
+export const ErrorMessage: React.FC<ErrorMessageProps> = ({ message = 'Error Loading Article' }) => (
   <div className="flex flex-col items-center justify-center min-h-screen">
-    <h2 className="text-2xl font-bold text-red-500 mb-4">Error Loading Article</h2>
+    <h2 className="text-2xl font-bold text-red-500 mb-4">{message}</h2>
     <p className="text-gray-400">Please try again later</p>
   </div>
 ); 

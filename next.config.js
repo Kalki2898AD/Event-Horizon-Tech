@@ -16,6 +16,7 @@ const nextConfig = {
         hostname: '*',
       }
     ],
+    unoptimized: true,
   },
   async headers() {
     return [

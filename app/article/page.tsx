@@ -1,73 +1,63 @@
 'use client';
 
-import { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import ArticleView from '../components/ArticleView';
-import Link from 'next/link';
+import { useState, useEffect } from 'react';
+import { Article } from '@/types';
+import { LoadingSpinner, ErrorMessage } from '@/components/LoadingSpinner';
+import Image from 'next/image';
 
 function ArticleContent() {
   const searchParams = useSearchParams();
-  const url = searchParams.get('url');
+  const url = searchParams?.get('url') || '';
   const [error, setError] = useState<string | null>(null);
+  const [article, setArticle] = useState<Article | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  if (!url) {
-    return (
-      <div className="min-h-screen bg-gray-50 pt-20 pb-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center py-12">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">No article URL provided</h2>
-            <Link
-              href="/"
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
-            >
-              Return Home
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (!url) {
+      setError('URL is required');
+      setLoading(false);
+      return;
+    }
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 pt-20 pb-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center py-12">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">{error}</h2>
-            <Link
-              href="/"
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
-            >
-              Return Home
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
+    fetch(`/api/article?url=${encodeURIComponent(url)}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.error) {
+          setError(data.error);
+        } else {
+          setArticle(data);
+        }
+        setLoading(false);
+      })
+      .catch(err => {
+        setError(err.message);
+        setLoading(false);
+      });
+  }, [url]);
+
+  if (loading) return <LoadingSpinner />;
+  if (error || !article) return <ErrorMessage message={error || 'Article not found'} />;
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-20 pb-10">
-      <ArticleView url={url} onError={setError} />
+    <div className="max-w-4xl mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-6 text-white">{article.title}</h1>
+      {article.urlToImage && (
+        <div className="relative w-full h-96 mb-6">
+          <Image 
+            src={article.urlToImage} 
+            alt={article.title}
+            fill
+            className="object-cover rounded-lg"
+          />
+        </div>
+      )}
+      <div 
+        className="prose prose-lg prose-invert max-w-none"
+        dangerouslySetInnerHTML={{ __html: article.content }}
+      />
     </div>
   );
 }
 
-export default function ArticlePage() {
-  return (
-    <Suspense 
-      fallback={
-        <div className="min-h-screen bg-gray-50 pt-20 pb-10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600">Loading article...</p>
-            </div>
-          </div>
-        </div>
-      }
-    >
-      <ArticleContent />
-    </Suspense>
-  );
-}
+export default ArticleContent;

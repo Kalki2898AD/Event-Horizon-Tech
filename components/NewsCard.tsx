@@ -18,10 +18,14 @@ const NewsCard: React.FC<NewsCardProps> = ({ article }) => {
     >
       <div className="relative w-full h-48 mb-4">
         <Image 
-          src={urlToImage || '/placeholder.jpg'} 
+          src={urlToImage || '/images/placeholder.jpg'} 
           alt={title}
           fill
           className="object-cover rounded-lg"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.src = '/images/placeholder.jpg';
+          }}
         />
       </div>
       <h2 className="text-xl font-bold text-white mb-2">{title}</h2>
