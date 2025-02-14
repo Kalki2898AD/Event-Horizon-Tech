@@ -12,6 +12,12 @@ export interface Article {
   author: string;
 }
 
+export interface NewsAPIResponse {
+  status: string;
+  totalResults: number;
+  articles: Article[];
+}
+
 export interface Subscriber {
   id: string;
   email: string;

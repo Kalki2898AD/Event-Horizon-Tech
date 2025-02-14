@@ -1,12 +1,12 @@
 import axios from 'axios';
-import { Article } from '../types';
+import type { Article, NewsAPIResponse } from '../types';
 
 const NEWS_API_KEY = process.env.NEWS_API_KEY;
-const NEWS_API_BASE_URL = 'https://newsapi.org/v2';
+const BASE_URL = 'https://newsapi.org/v2';
 
 export async function fetchNews(query?: string): Promise<Article[]> {
   try {
-    const response = await axios.get(`${NEWS_API_BASE_URL}/top-headlines`, {
+    const response = await axios.get<NewsAPIResponse>(`${BASE_URL}/top-headlines`, {
       params: {
         apiKey: NEWS_API_KEY,
         category: 'technology',
