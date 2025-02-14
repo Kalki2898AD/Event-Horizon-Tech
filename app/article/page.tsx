@@ -6,14 +6,10 @@ import Image from 'next/image';
 import { Article } from '@/types';
 import { LoadingSpinner, ErrorMessage } from '../../components/LoadingSpinner';
 
-interface ArticleViewProps {
-  url: string;
-  onError: (error: string) => void;
-}
-
 export default function ArticleContent() {
   const searchParams = useSearchParams();
   const url = searchParams?.get('url') || '';
+  const urlToImage = searchParams?.get('urlToImage') || '';
   const [error, setError] = useState<string | null>(null);
   const [article, setArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState(true);
@@ -26,20 +22,26 @@ export default function ArticleContent() {
         const data = await response.json();
 
         if (data.error) {
-          throw new Error(data.error);
+          setError(data.error);
+          return;
         }
 
         setArticle(data);
       } catch (error) {
         console.error('Error fetching article:', error);
-        onError(error instanceof Error ? error.message : 'Failed to fetch article');
+        setError(error instanceof Error ? error.message : 'Failed to fetch article');
       } finally {
         setLoading(false);
       }
     }
 
-    fetchArticle();
-  }, [url, urlToImage, onError]);
+    if (url) {
+      fetchArticle();
+    } else {
+      setError('URL is required');
+      setLoading(false);
+    }
+  }, [url]);
 
   if (loading) return <LoadingSpinner />;
   if (error || !article) return <ErrorMessage message={error || 'Article not found'} />;
