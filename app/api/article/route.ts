@@ -41,6 +41,7 @@ export async function GET(request: Request) {
       urlToImage: '', // You might want to extract this from the article
       publishedAt: new Date().toISOString(),
       source: {
+        id: null,
         name: new URL(articleUrl).hostname
       },
       author: 'Unknown' // Or extract from the article if available

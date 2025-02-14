@@ -6,8 +6,10 @@ export interface Article {
   url: string;
   publishedAt: string;
   source: {
+    id: string | null;
     name: string;
   };
+  author: string;
 }
 
 export interface Subscriber {
