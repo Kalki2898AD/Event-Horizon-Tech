@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { fetchNews } from '@/lib/newsApi';
-import { supabase } from '@/lib/supabase';
+import { fetchNews } from '../../../lib/newsApi';
+import { supabase } from '../../../lib/supabase';
 import type { Article } from '@/types';
 
 export async function GET(request: Request) {
