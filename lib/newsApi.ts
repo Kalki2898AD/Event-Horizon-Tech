@@ -20,7 +20,7 @@ export async function fetchNews(query?: string): Promise<Article[]> {
       title: article.title || '',
       description: article.description || '',
       content: article.content || '',
-      urlToImage: article.urlToImage || '', // Ensure urlToImage is always a string
+      urlToImage: article.urlToImage ?? '', // Use nullish coalescing to ensure urlToImage is always a string
       url: article.url,
       publishedAt: article.publishedAt,
       source: {
