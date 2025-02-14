@@ -6,6 +6,7 @@ import NewsCard from '../components/NewsCard';
 import AdContainer from '../components/AdContainer';
 import ScrollToTop from '../components/ScrollToTop';
 import { Article } from '../types';
+import { LoadingSpinner, ErrorMessage } from '../../components/LoadingSpinner';
 
 const AdSection = ({ children }: { children: React.ReactNode }) => (
   <div className="max-w-7xl mx-auto bg-white shadow-sm mb-8">
@@ -32,57 +33,53 @@ export default SearchPageWrapper;
 
 function SearchResults() {
   const searchParams = useSearchParams();
-  const query = searchParams.get('q') || '';
+  const query = searchParams?.get('q') ?? '';
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const searchArticles = async () => {
-      if (!query) {
-        setArticles([]);
-        setLoading(false);
-        return;
-      }
+    if (!query) {
+      setArticles([]);
+      setLoading(false);
+      return;
+    }
 
+    const fetchResults = async () => {
       try {
         setLoading(true);
-        setError(null);
         const response = await fetch(`/api/news/search?q=${encodeURIComponent(query)}`);
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
         const data = await response.json();
-        if (!data.articles) {
-          throw new Error('Invalid response format');
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to fetch results');
         }
+
         setArticles(data.articles || []);
       } catch (err) {
-        console.error('Error searching articles:', err);
-        setError(err instanceof Error ? err.message : 'Failed to search articles');
-        setArticles([]);
+        console.error('Search error:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch results');
       } finally {
         setLoading(false);
       }
     };
 
-    searchArticles();
+    fetchResults();
   }, [query]);
+
+  if (loading) return <LoadingSpinner />;
+  if (error) return <ErrorMessage message={error} />;
 
   return (
     <div className="min-h-screen bg-white">
       <main className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-6">
-          {query ? `Search Results for "${query}"` : 'Search Results'}
+          {articles.length > 0 
+            ? `Search results for "${query}"`
+            : `No results found for "${query}"`}
         </h1>
 
-        {loading ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-          </div>
-        ) : error ? (
-          <div className="text-center text-red-500 py-8">{error}</div>
-        ) : articles.length === 0 ? (
+        {articles.length === 0 ? (
           <div className="text-center text-gray-500 py-8">
             {query ? 'No articles found for your search.' : 'Enter a search term to find articles.'}
           </div>
