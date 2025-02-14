@@ -16,19 +16,23 @@ export async function fetchNews(query?: string): Promise<Article[]> {
       }
     });
 
-    return response.data.articles.map((article) => ({
-      title: article.title || '',
-      description: article.description || '',
-      content: article.content || '',
-      urlToImage: article.urlToImage ?? '', // Use nullish coalescing to ensure urlToImage is always a string
-      url: article.url,
-      publishedAt: article.publishedAt,
-      source: {
-        id: article.source.id || null,
-        name: article.source.name || ''
-      },
-      author: article.author || 'Unknown'
-    }));
+    // Convert NewsAPIArticle to Article
+    return response.data.articles.map(article => {
+      const converted: Article = {
+        title: article.title || '',
+        description: article.description || '',
+        content: article.content || '',
+        urlToImage: article.urlToImage || '/images/placeholder.jpg',
+        url: article.url,
+        publishedAt: article.publishedAt,
+        source: {
+          id: article.source?.id || null,
+          name: article.source?.name || ''
+        },
+        author: article.author || 'Unknown'
+      };
+      return converted;
+    });
   } catch (error) {
     console.error('Error fetching news:', error);
     throw error;
