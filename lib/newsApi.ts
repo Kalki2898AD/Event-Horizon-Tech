@@ -15,7 +15,11 @@ export async function fetchNews(query?: string): Promise<Article[]> {
         q: query
       }
     });
-    return response.data.articles;
+
+    return response.data.articles.map((article) => ({
+      ...article,
+      urlToImage: article.urlToImage || '', // Ensure urlToImage is always a string
+    }));
   } catch (error) {
     console.error('Error fetching news:', error);
     throw error;
